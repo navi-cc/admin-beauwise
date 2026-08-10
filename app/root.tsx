@@ -11,10 +11,21 @@ import './app.css';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
+import { Toaster } from './components/ui/sonner';
+import { PhotoProvider } from 'react-photo-view';
 const queryClient = new QueryClient();
+
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+	{
+		rel: 'icon',
+		type: 'image/svg+xml',
+		href: '/favicon.svg'
+	},
+	{
+		rel: 'shortcut icon',
+		href: '/favicon.ico'
+	},
 	{
 		rel: 'preconnect',
 		href: 'https://fonts.gstatic.com',
@@ -37,10 +48,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				<QueryClientProvider client={queryClient}>
-					<SidebarProvider>
-						<TooltipProvider>{children}</TooltipProvider>
-					</SidebarProvider>
-					<ScrollRestoration />
+					<PhotoProvider maskOpacity={0.8} maskClosable={false}>
+						<SidebarProvider>
+							<TooltipProvider>{children}</TooltipProvider>
+						</SidebarProvider>
+						<ScrollRestoration />
+						<Toaster visibleToasts={5} expand={true} />
+					</PhotoProvider>
 				</QueryClientProvider>
 				<Scripts />
 			</body>

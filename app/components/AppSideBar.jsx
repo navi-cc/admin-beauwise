@@ -34,7 +34,7 @@ export default function AppSideBar() {
 	const location = useLocation();
 	const currentPath = location.pathname;
 	return (
-		<Sidebar>
+		<Sidebar collapsible='icon'>
 			<div className='flex gap-y-0 items-center p-2 gap-x-2'>
 				<GearIcon size={20} />
 				<div className='flex flex-col'>
