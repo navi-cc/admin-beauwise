@@ -26,16 +26,16 @@ export const updateUserStatus = async function ({
 	status
 }: {
 	userId: string;
-	status: boolean;
+	status: string;
 }) {
 	const token = await auth.currentUser?.getIdToken();
-	const respone = await fetch(`${API_BASE_URL}/users/${userId}/disable`, {
+	const respone = await fetch(`${API_BASE_URL}/users/${userId}/status`, {
 		method: 'PATCH',
 		headers: {
 			Authorization: `Bearer ${token}`,
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ updatedItem: status })
+		body: JSON.stringify({ updatedItem: status.replaceAll(" ", "_").toUpperCase() })
 	});
 
 	return respone.ok;

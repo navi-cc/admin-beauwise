@@ -25,7 +25,7 @@ export function DisableUserDialog({
 	const handleConfirm = () => {
 		if (!user) return;
 
-		onConfirm({ userId: user.id, status: !user.account_disable });
+		onConfirm({ userId: user.id, status: (!isCurrentlyDisabled ? 'active' : 'disabled') });
 		onOpenChange(false);
 	};
 	return (
