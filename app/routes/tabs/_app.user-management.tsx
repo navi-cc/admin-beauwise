@@ -66,10 +66,25 @@ export default function UserManagement() {
 		await sendPasswordResetEmail(auth, data.email);
 		toast.success(`The reset password link is successfully sent to ${data.email}.`);
 	};
+
 	const onChangeEmail = (data) => {
 		console.log('email', data);
 	};
+
+    const onCancelDeletion = (data) => {
+        data.status = 'remove_pending_deletion';
+		toast.promise(accountStatusChange.mutateAsync(data), {
+			position: 'bottom-right',
+			loading: 'Updating account status...',
+			success: () => {
+				return 'Account status updated.';
+			},
+			error: 'Your changes is not saved. Please try again'
+		});
+    }
+
 	const onDisableUser = (data) => {
+        data.status = 'disabled';
 		toast.promise(accountStatusChange.mutateAsync(data), {
 			position: 'bottom-right',
 			loading: 'Updating account status...',
@@ -112,6 +127,7 @@ export default function UserManagement() {
 					pageIndex={pagination.pageIndex}
 					pageSize={pagination.pageSize}
 					onChangeEmail={onChangeEmail}
+                    onCancelDeletion={onCancelDeletion}
 					onResetPassword={onResetPassword}
 					onDisableUser={onDisableUser}
 				/>

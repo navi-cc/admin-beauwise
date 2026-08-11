@@ -1,4 +1,4 @@
-export type UserStatus = 'active' | 'disabled';
+export type UserStatus = 'active' | 'disabled' | 'pending_deletion';
 
 type Roles = 'admin' | 'client';
 
@@ -27,6 +27,7 @@ export interface User {
 		lastSignInTime: string;
 		creationTime: string;
 	};
+    user_status: UserStatus;
 }
 
 export interface ChangePasswordPayload {
@@ -37,9 +38,15 @@ export interface ChangeEmailPayload {
 	userId: string;
 	newEmail: string;
 }
+
+export interface CancelDeletionPayload {
+	userId: string;
+	status: string;
+}
+
 export interface DisableUserPayload {
 	userId: string;
-	status: boolean;
+	status: string;
 }
 
 export interface DeleteUserPayload {

@@ -17,9 +17,15 @@ import MoreHorizontal from '@/components/icons/more-horizontal';
 interface ColumnActions {
 	onResetPassword: (user: User) => void;
 	onChangeEmail: (user: User) => void;
+    onCancelDeletion: (user: User) => void;
 	onDisableUser: (user: User) => void;
 	onDeleteUser: (user: User) => void;
 }
+
+function getUserStatus(status: string) {
+    
+}
+
 export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 	return [
 		{
@@ -40,13 +46,15 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 			header: 'Status',
 			cell: ({ row }) => {
 				const accountDisable = row.getValue('account_disable');
+                const status = row.original.status;
+                console.log(row);
 
 				return (
 					<Badge
 						variant={!accountDisable ? 'default' : 'secondary'}
 						style={{ textTransform: 'capitalize' }}
 					>
-						{!accountDisable ? 'active' : 'disabled'}
+						{!status ? (!accountDisable ? 'active' : 'disabled') : status.toString().replaceAll("_", " ").toLowerCase()}
 					</Badge>
 				);
 			}
@@ -80,6 +88,7 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 				const user = row.original;
 				const isDisabled = user.account_disable;
 				const isOAuthUser = user.providerId === 'google.com';
+                const isPendingDeletion = user.status === 'PENDING_DELETION';
 				return (
 					<DropdownMenu>
 						<DropdownMenuTrigger
@@ -101,6 +110,16 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 										</DropdownMenuItem>
 									</>
 								)}
+                                {isPendingDeletion && (
+                                    <>
+                                        <DropdownMenuItem
+                                            onClick={() => actions.onCancelDeletion(user)}
+                                            className={isPendingDeletion ? '' : ''}
+                                        >
+                                            Cancel Deletion
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
 
 								<DropdownMenuItem
 									onClick={() => actions.onDisableUser(user)}

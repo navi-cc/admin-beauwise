@@ -17,14 +17,17 @@ import type {
 	DeleteUserPayload,
 	ChangeRolePayload,
 	ForceLogoutPayload,
-	AuditLogEntry
+	AuditLogEntry,
+    CancelDeletionPayload
 } from '@/types/user';
 import type { OnChangeFn, PaginationState } from '@tanstack/react-table';
+import { CancelDeletionDialog } from './cancel-deletion-dialog';
 interface UserManagementTableProps {
 	users: User[];
 
 	onResetPassword: (payload: User) => void;
 	onChangeEmail: (payload: ChangeEmailPayload) => void;
+    onCancelDeletion: (payload: CancelDeletionPayload) => void;
 	onDisableUser: (payload: DisableUserPayload) => void;
 	onDeleteUser: (payload: DeleteUserPayload) => void;
 
@@ -45,6 +48,7 @@ export function UserManagementTable({
 	pageSize,
 	onPaginationChange,
 	onChangeEmail,
+    onCancelDeletion,
 	onDisableUser,
 	onDeleteUser,
 
@@ -56,6 +60,7 @@ export function UserManagementTable({
 	const [selectedUser, setSelectedUser] = useState<User | null>(null);
 	const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+	const [cancelDeletionDialogOpen, setCancelDeletionDialogOpen] = useState(false);
 	const [disableDialogOpen, setDisableDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -70,6 +75,10 @@ export function UserManagementTable({
 					setSelectedUser(user);
 					setEmailDialogOpen(true);
 				},
+                onCancelDeletion: (user) => {
+                    setSelectedUser(user);
+                    setCancelDeletionDialogOpen(true);
+                },
 				onDisableUser: (user) => {
 					setSelectedUser(user);
 					setDisableDialogOpen(true);
@@ -111,6 +120,13 @@ export function UserManagementTable({
 				onOpenChange={setEmailDialogOpen}
 				onSubmit={onChangeEmail}
 			/>
+
+            <CancelDeletionDialog 
+				user={selectedUser}
+				open={cancelDeletionDialogOpen}
+				onOpenChange={setCancelDeletionDialogOpen}
+				onConfirm={onCancelDeletion}
+            />
 
 			<DisableUserDialog
 				user={selectedUser}
