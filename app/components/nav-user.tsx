@@ -39,6 +39,7 @@ import {
 import { signOut } from 'firebase/auth';
 import { redirect, useNavigate } from 'react-router';
 import { toast } from 'sonner';
+import ChevronsLeftRight from './icons/chevrons-left-right';
 
 export function NavUser({
 	user
@@ -71,18 +72,20 @@ export function NavUser({
 							render={<SidebarMenuButton size='lg' className='aria-expanded:bg-muted' />}
 						>
 							<Avatar>
-								<AvatarImage src={auth.currentUser?.photoURL} />
-								<AvatarFallback>
-									<User className='self-center' />
+								<AvatarImage src={auth.currentUser?.photoURL as string} />
+								<AvatarFallback className='bg-red'>
+									<User className='self-center text-primary' />
 								</AvatarFallback>
 							</Avatar>
-							<div className='grid flex-1 text-left text-sm leading-tight'>
-								<span className='truncate font-medium'>
+							<div className='grid flex-1 text-left leading-tight'>
+								<span className='truncate font-medium text-sidebar-foreground'>
 									{auth.currentUser?.displayName}
 								</span>
-								<span className='truncate text-xs'>{auth.currentUser?.email}</span>
+								<span className='truncate text-xs font-extralight'>
+									{auth.currentUser?.email}
+								</span>
 							</div>
-							<CaretUpDownIcon className='ml-auto size-4' />
+							<ChevronsLeftRight className='ml-auto size-4 rotate-z-[180deg]!' />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
 							className='w-fit'

@@ -13,18 +13,21 @@ import {
 import type { User } from '@/types/user';
 import ArrowUpDown from '@/components/icons/arrow-up-down';
 import MoreHorizontal from '@/components/icons/more-horizontal';
+import UserRoundCog from '../ui/user-round-cog';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
+import { Mail } from '../icons/mail';
+import MailAccount from '../icons/mail-account';
+import GoogleIcon from '../icons/google';
 
 interface ColumnActions {
 	onResetPassword: (user: User) => void;
 	onChangeEmail: (user: User) => void;
-    onCancelDeletion: (user: User) => void;
+	onCancelDeletion: (user: User) => void;
 	onDisableUser: (user: User) => void;
 	onDeleteUser: (user: User) => void;
 }
 
-function getUserStatus(status: string) {
-    
-}
+function getUserStatus(status: string) {}
 
 export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 	return [
@@ -38,7 +41,40 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 					Email
 					<ArrowUpDown />
 				</Button>
-			)
+			),
+			cell: ({ row }) => {
+				const user = row.original;
+				const isAdmin = user.account_access.roles === 'admin';
+
+				return (
+					<Tooltip>
+						<TooltipTrigger>
+							<div className='flex items-center gap-2'>
+								<span>{row.getValue('email')}</span>
+								{isAdmin && <UserRoundCog className='h-4 w-4 text-primary' />}
+							</div>
+						</TooltipTrigger>
+
+						<TooltipContent>Admin</TooltipContent>
+					</Tooltip>
+				);
+			}
+		},
+
+		{
+			header: 'Provider',
+			cell: ({ row }) => {
+				const user = row.original;
+
+				const provider = user.providerId;
+
+				return (
+					<div className='flex flex-1'>
+						{provider === 'password' && <MailAccount className='size-5 self-center' />}
+						{provider === 'google.com' && <GoogleIcon className='size-5 self-center' />}
+					</div>
+				);
+			}
 		},
 
 		{
@@ -46,15 +82,18 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 			header: 'Status',
 			cell: ({ row }) => {
 				const accountDisable = row.getValue('account_disable');
-                const status = row.original.status;
-                console.log(row);
+				const status = row.original.status;
 
 				return (
 					<Badge
 						variant={!accountDisable ? 'default' : 'secondary'}
 						style={{ textTransform: 'capitalize' }}
 					>
-						{!status ? (!accountDisable ? 'active' : 'disabled') : status.toString().replaceAll("_", " ").toLowerCase()}
+						{!status
+							? !accountDisable
+								? 'active'
+								: 'disabled'
+							: status.toString().replaceAll('_', ' ').toLowerCase()}
 					</Badge>
 				);
 			}
@@ -87,13 +126,18 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 			cell: ({ row }) => {
 				const user = row.original;
 				const isDisabled = user.account_disable;
+				const isAdmin = user.account_access.roles === 'admin';
 				const isOAuthUser = user.providerId === 'google.com';
-                const isPendingDeletion = user.status === 'PENDING_DELETION';
+				const isPendingDeletion = user.status === 'PENDING_DELETION';
 				return (
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							render={(props) => (
-								<Button {...props} variant='ghost' className='h-8 w-8 p-0'>
+								<Button
+									{...props}
+									variant='ghost'
+									className={`h-8 w-8 p-0 ${isAdmin ? 'pointer-events-none' : 'pointer-events-auto'}`}
+								>
 									<span className='sr-only'>Open menu</span>
 									<MoreHorizontal />
 								</Button>
@@ -110,16 +154,16 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 										</DropdownMenuItem>
 									</>
 								)}
-                                {isPendingDeletion && (
-                                    <>
-                                        <DropdownMenuItem
-                                            onClick={() => actions.onCancelDeletion(user)}
-                                            className={isPendingDeletion ? '' : ''}
-                                        >
-                                            Cancel Deletion
-                                        </DropdownMenuItem>
-                                    </>
-                                )}
+								{isPendingDeletion && (
+									<>
+										<DropdownMenuItem
+											onClick={() => actions.onCancelDeletion(user)}
+											className={isPendingDeletion ? '' : ''}
+										>
+											Cancel Deletion
+										</DropdownMenuItem>
+									</>
+								)}
 
 								<DropdownMenuItem
 									onClick={() => actions.onDisableUser(user)}

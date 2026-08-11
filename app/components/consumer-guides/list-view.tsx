@@ -66,6 +66,12 @@ export function ListView({
 						className={`group flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card hover:border-border hover:shadow-xs transition-all cursor-pointer ${item.is_deleted ? 'opacity-60' : 'opacity-100'}`}
 						onClick={() => handleEdit(item)}
 					>
+						<img
+							className='size-8'
+							src={`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/cosmetic_guides/${item.imageId}.webp?q=${item.fileHash}`}
+							alt={item.name}
+						/>
+
 						<div className='flex flex-col flex-1 min-w-0'>
 							<h3 className='font-medium text-sm truncate'>{item.name}</h3>
 							<p className='text-black/50'>{item.definition}</p>

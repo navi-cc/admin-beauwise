@@ -3,6 +3,7 @@ import {
 	Links,
 	Meta,
 	Outlet,
+	redirect,
 	Scripts,
 	ScrollRestoration
 } from 'react-router';
@@ -13,6 +14,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
 import { PhotoProvider } from 'react-photo-view';
+import { auth } from './lib/firebase';
 const queryClient = new QueryClient();
 
 export const links: Route.LinksFunction = () => [

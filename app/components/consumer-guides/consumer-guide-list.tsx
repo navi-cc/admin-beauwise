@@ -154,8 +154,8 @@ export function ConsumerGuideList() {
 	return (
 		<div className='flex-1 space-y-2'>
 			<div>
-				<div className='text-1xl text-primary font-semibold flex items-center gap-2'>
-					<CollectionsBookmark className='h-6 w-6 text-primary' />
+				<div className='text-2xl text-primary font-bold flex items-center gap-2'>
+					<CollectionsBookmark className='size-6' />
 					Consumer Guide Collections
 				</div>
 				<p className='text-sm text-muted-foreground mt-1'>

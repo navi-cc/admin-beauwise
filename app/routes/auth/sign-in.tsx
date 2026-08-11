@@ -27,7 +27,7 @@ import { auth } from '@/lib/firebase';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { FirebaseError } from 'firebase/app';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { redirect, useNavigate } from 'react-router';
@@ -43,6 +43,18 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function meta() {
 	return [{ title: 'Admin BeauWise | Sign In' }];
+}
+
+export async function clientLoader() {
+	await auth.authStateReady();
+
+	const user = await auth.currentUser?.getIdTokenResult();
+
+	if (auth.currentUser && user?.claims.roles === 'admin') {
+		return redirect('/');
+	}
+
+	return null;
 }
 
 export default function SignIn() {

@@ -102,7 +102,7 @@ export function GridView({
 												e.stopPropagation();
 												handleEdit(item);
 											}}
-											id={`edit-item-${item.id}`}
+											id={`edit-item-${item?.id}`}
 										>
 											<Pencil className='h-4 w-4' />
 										</Button>
@@ -114,7 +114,7 @@ export function GridView({
 												e.stopPropagation();
 												handleDeleteClick(item);
 											}}
-											id={`delete-item-${item.id}`}
+											id={`delete-item-${item?.id}`}
 										>
 											<Trash className='h-4 w-4' />
 										</Button>
@@ -122,11 +122,16 @@ export function GridView({
 								)}
 							</div>
 
-							<CardHeader className='pb-2'>
-								<CardTitle className='text-base line-clamp-1'>{item.name}</CardTitle>
+							<CardHeader className='pb-2 items-center justify-center'>
+								<img
+									className='aspect-square size-50'
+									src={`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/cosmetic_guides/${item.imageId}.webp?q=${item.fileHash}`}
+									alt={item.name}
+								/>
 							</CardHeader>
 
 							<CardContent className='flex-1 pb-3'>
+								<CardTitle className='text-base line-clamp-1'>{item.name}</CardTitle>
 								<p className='text-sm text-muted-foreground line-clamp-3'>
 									{item.definition}
 								</p>

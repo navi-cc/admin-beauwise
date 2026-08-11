@@ -5,6 +5,7 @@ import {
 	SidebarMenuButton
 } from '@/components/ui/sidebar';
 import { NavLink, useNavigation } from 'react-router';
+import ArrowLeft from './icons/arrow-left';
 
 export function NavMain({
 	items
@@ -22,15 +23,14 @@ export function NavMain({
 }) {
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel>Platform</SidebarGroupLabel>
+			<SidebarGroupLabel>Explore</SidebarGroupLabel>
 			<SidebarMenu>
 				{items.map((item) => (
 					<NavLink key={item.path} viewTransition to={item.path}>
 						{({ isActive }) => (
 							<SidebarMenuButton
-								className='transition-all duration-180 ease-linear data-active:bg-primary data-active:hover:bg-primary data-active:text-white data-active:hover:text-white'
+								className='group transition-all duration-180 ease-linear data-active:bg-primary data-active:hover:bg-primary data-active:text-white data-active:hover:text-white'
 								isActive={isActive}
-								tooltip={item.title}
 							>
 								{item.icon}
 								<span>{item.title}</span>

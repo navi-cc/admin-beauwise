@@ -45,7 +45,7 @@ import { cn } from '@/lib/utils';
 interface GuideFormDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	consumerGuide: MythFact | null;
+	mythFact: MythFact | null;
 	isEditing: boolean;
 }
 
@@ -69,7 +69,7 @@ type FileExtended = File & {
 export function MythFactFormDialog({
 	open,
 	onOpenChange,
-	consumerGuide,
+	mythFact,
 	isEditing
 }: GuideFormDialogProps) {
 	const addMutation = useAddMythFact();
@@ -104,8 +104,14 @@ export function MythFactFormDialog({
 				file.name + file.lastModified.toString() + Date.now().toString()
 			);
 
-			form.setValue('displayImage.file', file);
-			form.setValue(`displayImage.fileHash`, fileHash);
+			form.setValue('displayImage.file', file, {
+				shouldDirty: true,
+				shouldValidate: true
+			});
+			form.setValue(`displayImage.fileHash`, fileHash, {
+				shouldDirty: true,
+				shouldValidate: true
+			});
 			setDisplayImagePreview(URL.createObjectURL(file));
 			setDisplayImageLoading(true);
 			setDisplayImageLoadError(false);
@@ -127,8 +133,11 @@ export function MythFactFormDialog({
 			const fileHash = generateHash(
 				file.name + file.lastModified.toString() + Date.now().toString()
 			);
-			form.setValue('videoGuide.file', file);
-			form.setValue(`videoGuide.fileHash`, fileHash);
+			form.setValue('videoGuide.file', file, { shouldDirty: true, shouldValidate: true });
+			form.setValue(`videoGuide.fileHash`, fileHash, {
+				shouldDirty: true,
+				shouldValidate: true
+			});
 
 			setVideoGuidePreview(URL.createObjectURL(file));
 			setVideoGuideLoading(true);
@@ -160,11 +169,14 @@ export function MythFactFormDialog({
 
 	const handleRemoveImage = (e: any) => {
 		e.stopPropagation();
-		form.setValue('displayImage.file', null);
+		form.setValue('displayImage.file', null, { shouldDirty: true, shouldValidate: true });
 
 		if (isEditing) {
-			const previousFileHash = consumerGuide?.displayImage.fileHash as string;
-			form.setValue(`displayImage.fileHash`, previousFileHash);
+			const previousFileHash = mythFact?.displayImage.fileHash as string;
+			form.setValue(`displayImage.fileHash`, previousFileHash, {
+				shouldDirty: true,
+				shouldValidate: true
+			});
 		}
 
 		setDisplayImagePreview(null);
@@ -173,10 +185,13 @@ export function MythFactFormDialog({
 	const handleRemoveVideo = (e: any) => {
 		e.stopPropagation();
 
-		form.setValue('videoGuide.file', null);
+		form.setValue('videoGuide.file', null, { shouldDirty: true, shouldValidate: true });
 		if (isEditing) {
-			const previousFileHash = consumerGuide?.videoGuide.fileHash as string;
-			form.setValue(`videoGuide.fileHash`, previousFileHash);
+			const previousFileHash = mythFact?.videoGuide.fileHash as string;
+			form.setValue(`videoGuide.fileHash`, previousFileHash, {
+				shouldDirty: true,
+				shouldValidate: true
+			});
 		}
 
 		setVideoGuidePreview(null);
@@ -212,8 +227,14 @@ export function MythFactFormDialog({
 			file.name + file.lastModified.toString() + Date.now().toString()
 		);
 
-		form.setValue(`topics.${index}.fileHash`, fileHash);
-		form.setValue(`topics.${index}.file`, file);
+		form.setValue(`topics.${index}.fileHash`, fileHash, {
+			shouldDirty: true
+		});
+
+		form.setValue(`topics.${index}.file`, file, {
+			shouldDirty: true,
+			shouldValidate: true
+		});
 
 		setTopicImagePreviews((prev) => new Map(prev).set(index, URL.createObjectURL(file)));
 	}, []);
@@ -223,13 +244,18 @@ export function MythFactFormDialog({
 			const previewUrl = topicImagePreviews.get(index);
 
 			if (isEditing) {
-				const previousFileHash = consumerGuide?.topics[index].fileHash as string;
-				form.setValue(`topics.${index}.fileHash`, previousFileHash);
+				const previousFileHash = mythFact?.topics[index].fileHash as string;
+				form.setValue(`topics.${index}.fileHash`, previousFileHash, {
+					shouldDirty: true
+				});
 			}
 
 			URL.revokeObjectURL(previewUrl as string);
 
-			form.setValue(`topics.${index}.file`, null);
+			form.setValue(`topics.${index}.file`, null, {
+				shouldDirty: true,
+				shouldValidate: true
+			});
 
 			setTopicImagePreviews((prev) => {
 				const next = new Map(prev);
@@ -246,10 +272,10 @@ export function MythFactFormDialog({
 		handleRemoveTopicImage(index);
 	};
 
-	const updateButtonDisabled = isEditing && _.isEqual(form.getValues(), consumerGuide);
+	const updateButtonDisabled = isEditing && _.isEqual(form.getValues(), mythFact);
 
 	const onSubmit = async (data: MythFactFormValues) => {
-		if (isEditing && consumerGuide) {
+		if (isEditing && mythFact) {
 			onOpenChange(false);
 			updateMutation.mutate(
 				{
@@ -257,7 +283,7 @@ export function MythFactFormDialog({
 				},
 				{
 					onSuccess: () => {
-						toast.success(`${consumerGuide.name} updated successfully.`, {
+						toast.success(`${mythFact.name} updated successfully.`, {
 							position: 'top-right',
 							duration: 10000
 						});
@@ -311,23 +337,23 @@ export function MythFactFormDialog({
 
 	useEffect(() => {
 		if (open) {
-			if (consumerGuide) {
-				console.log(consumerGuide);
+			if (mythFact) {
+				console.log(mythFact);
 
 				form.reset({
-					name: consumerGuide.name,
-					id: consumerGuide.id,
+					name: mythFact.name,
+					id: mythFact.id,
 					displayImage: {
-						fileHash: consumerGuide.displayImage?.fileHash
+						fileHash: mythFact.displayImage?.fileHash
 					},
 
-					baseImagePath: consumerGuide.baseImagePath,
+					baseImagePath: mythFact.baseImagePath,
 
 					videoGuide: {
-						fileHash: consumerGuide.videoGuide?.fileHash
+						fileHash: mythFact.videoGuide?.fileHash
 					},
-					sources: consumerGuide.sources.map(({ name, link }) => ({ name, link })),
-					topics: consumerGuide.topics.map((t) => ({
+					sources: mythFact.sources.map(({ name, link }) => ({ name, link })),
+					topics: mythFact.topics.map((t) => ({
 						topic: t.topic,
 						fact: t.fact,
 						myth: t.myth,
@@ -336,18 +362,18 @@ export function MythFactFormDialog({
 					}))
 				});
 				setDisplayImagePreview(
-					`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${consumerGuide?.baseImagePath}/display_image.webp?q=${consumerGuide?.displayImage?.fileHash}` ||
+					`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${mythFact?.baseImagePath}/display_image.webp?q=${mythFact?.displayImage?.fileHash}` ||
 						null
 				);
 				setVideoGuidePreview(
-					`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${consumerGuide?.baseImagePath}/video_guide.mp4?q=${consumerGuide?.videoGuide?.fileHash}` ||
+					`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${mythFact?.baseImagePath}/video_guide.mp4?q=${mythFact?.videoGuide?.fileHash}` ||
 						null
 				);
-				consumerGuide.topics.forEach((t, i) => {
+				mythFact.topics.forEach((t, i) => {
 					if (t.fileHash)
 						topicImagePreviews.set(
 							i,
-							`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${consumerGuide?.baseImagePath}/${t.imageId}.webp?q=${t.fileHash}`
+							`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${mythFact?.baseImagePath}/${t.imageId}.webp?q=${t.fileHash}`
 						);
 				});
 			} else {
@@ -357,7 +383,7 @@ export function MythFactFormDialog({
 				setVideoGuidePreview(null);
 			}
 		}
-	}, [open, consumerGuide, form]);
+	}, [open, mythFact, form]);
 	return (
 		<>
 			<AlertDialog
@@ -375,8 +401,8 @@ export function MythFactFormDialog({
 						<AlertDialogTitle>{isEditing ? 'Edit Item' : 'Add Item'}</AlertDialogTitle>
 						<AlertDialogDescription>
 							{isEditing
-								? 'Update the consumerGuide details below.'
-								: 'Fill in the details to add a new consumerGuide.'}
+								? `Update ${mythFact?.name} details below.`
+								: 'Fill in the details to add a new mythFact.'}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 
@@ -772,8 +798,6 @@ export function MythFactFormDialog({
 												render={({ fieldState: { error } }) => {
 													const url = topicImagePreviews.get(index);
 
-													console.log(url);
-
 													return (
 														<Field>
 															<TopicImageDropzone
@@ -797,7 +821,7 @@ export function MythFactFormDialog({
 
 						<AlertDialogFooter>
 							<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-							<Button type='submit' disabled={isPending || updateButtonDisabled}>
+							<Button type='submit' disabled={isPending || !form.formState.isDirty}>
 								{isPending && <Loader className='mr-2 h-4 w-4 animate-spin' />}
 								{isEditing ? 'Update' : 'Add'} Item
 							</Button>

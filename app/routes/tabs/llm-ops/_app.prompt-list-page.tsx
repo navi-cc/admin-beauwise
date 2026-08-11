@@ -13,12 +13,20 @@ import SearchX from '@/components/icons/search-x';
 import Alert from '@/components/icons/alert';
 import RefreshCw from '@/components/icons/refresh-cw';
 import Refresh from '@/components/icons/refresh';
+import AiNetworkIcon from '@/components/icons/ai-network';
 
 const getTime = (t: any) => t?.toDate?.()?.getTime?.() ?? 0;
 
 export default function PromptListPage() {
 	const navigate = useNavigate();
-	const { data: prompts = [], isError, error, refetch, isFetching } = usePrompts();
+	const {
+		data: prompts = [],
+		isError,
+		isRefetchError,
+		error,
+		refetch,
+		isFetching
+	} = usePrompts();
 
 	const [filters, setFilters] = useState<PromptFilters>({
 		search: '',
@@ -80,21 +88,28 @@ export default function PromptListPage() {
 	};
 
 	return (
-		<div className='space-y-6 container mx-auto p-6 max-w-7xl'>
-			<div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+		<div className='space-y-2 p-2'>
+			<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
 				<div>
-					<h1 className='text-3xl font-bold tracking-tight'>Prompt Management</h1>
+					<div className='flex items-center text-primary gap-x-2'>
+						<AiNetworkIcon className='size-6' />
+						<h1 className='text-2xl font-bold tracking-tight'>Prompt Management</h1>
+					</div>
+
 					<p className='text-muted-foreground text-sm'>
 						Manage, version, and evaluate your LLM system prompt templates.
 					</p>
 				</div>
-				<Button onClick={() => navigate('/llm-ops/create', { viewTransition: true })}>
-					<Plus className='mr-2 h-4 w-4' />
-					Create Prompt
-				</Button>
 			</div>
 
-			<div className='flex flex-col gap-y-5'>
+			<div className='flex flex-col gap-y-2'>
+				<Button
+					className='self-start'
+					onClick={() => navigate('/llm-ops/create', { viewTransition: true })}
+				>
+					<Plus className='mr-1 h-4 w-4' />
+					Create Prompt
+				</Button>
 				<PromptFiltersBar filters={filters} onChange={setFilters} />
 				<Button className='self-start' variant='outline' onClick={() => refetch()}>
 					<Refresh className='mr-2 h-4 w-4' />
@@ -102,14 +117,14 @@ export default function PromptListPage() {
 				</Button>
 			</div>
 
-			{isError ? (
+			{isError || isRefetchError ? (
 				<div className='flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50'>
 					<Alert className='mx-auto h-12 w-12 text-destructive/50' />
 					<h3 className='mt-4 text-lg font-semibold'>Error loading prompts</h3>
 					<p className='mb-4 mt-2 text-sm text-muted-foreground'>
 						{error instanceof Error ? error.message : 'An unknown error occurred'}
 					</p>
-					<Button variant='outline' onClick={() => refetch()}>
+					<Button variant='outline' onClick={() => refetch({ throwOnError: true })}>
 						<RefreshCw className='mr-2 h-4 w-4' />
 						Try again
 					</Button>

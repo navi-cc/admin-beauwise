@@ -170,8 +170,8 @@ export function MythFactList() {
 		<div className='space-y-1.5'>
 			<div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
 				<div>
-					<div className='text-1xl text-primary font-semibold flex items-center gap-2'>
-						<Archive className='h-6 w-6 text-primary' />
+					<div className='text-2xl text-primary font-bold flex items-center gap-2'>
+						<Archive className='size-6' />
 						Myths & Facts Directory
 					</div>
 					<p className='text-sm text-muted-foreground mt-1'>
@@ -357,7 +357,7 @@ export function MythFactList() {
 				open={formOpen}
 				onOpenChange={setFormOpen}
 				isEditing={!!editingMythFact}
-				consumerGuide={editingMythFact}
+				mythFact={editingMythFact}
 			/>
 			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
 				<AlertDialogContent>

@@ -80,8 +80,8 @@ export function ConsumerGuideFormDialog({
 					file.name + file.lastModified.toString() + Date.now().toString()
 				);
 
-				form.setValue('file', file);
-				form.setValue('fileHash', fileHash);
+				form.setValue('file', file, { shouldDirty: true, shouldValidate: true });
+				form.setValue('fileHash', fileHash, { shouldDirty: true, shouldValidate: true });
 				setImagePreview(URL.createObjectURL(file));
 				setImageLoading(true);
 				setImageLoadError(false);
@@ -121,17 +121,17 @@ export function ConsumerGuideFormDialog({
 		e.stopPropagation();
 
 		if (item) {
-			form.setValue('fileHash', item?.fileHash as string);
+			form.setValue('fileHash', item?.fileHash as string, { shouldDirty: true });
 		}
 
-		form.setValue('file', null);
+		form.setValue('file', null, { shouldDirty: true, shouldValidate: true });
 		setImagePreview(null);
 		inputRef.current.value = '';
 	};
 
 	const onSubmit = async (data: ConsumerGuideFormValues) => {
 		if (isEditing && item) {
-			// onOpenChange(false);
+			onOpenChange(false);
 			updateMutation.mutate(
 				{
 					data
@@ -161,7 +161,7 @@ export function ConsumerGuideFormDialog({
 					onError: (err) => toast.error(err.message)
 				}
 			);
-			// onOpenChange(false);
+			onOpenChange(false);
 		}
 	};
 
@@ -176,11 +176,12 @@ export function ConsumerGuideFormDialog({
 					definition: item.definition,
 					fileHash: item.fileHash,
 					imageId: item.imageId,
-					sources: item.sources.length > 0 ? item.sources : [{ name: '', link: '' }],
-					usage: item.usage
+					sources: item.sources,
+					usage: item.usage,
+					file: null
 				});
 				setImagePreview(
-					`https://${import.meta.env.VITE_CDN_BEAUWISE}/cosmetic_guides/${item.imageId}/?q=${item.fileHash}` ||
+					`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/cosmetic_guides/${item?.imageId}.webp?q=${item?.fileHash}` ||
 						null
 				);
 			} else {
@@ -461,7 +462,7 @@ export function ConsumerGuideFormDialog({
 							>
 								Cancel
 							</Button>
-							<Button type='submit' disabled={isPending}>
+							<Button type='submit' disabled={isPending || !form.formState.isDirty}>
 								{isPending && <Loader className='mr-2 h-4 w-4 animate-spin' />}
 								{isEditing ? 'Update' : 'Add'} Item
 							</Button>

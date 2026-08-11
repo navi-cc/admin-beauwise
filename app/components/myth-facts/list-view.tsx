@@ -40,7 +40,7 @@ export function ListView({
 	return (
 		<div className='flex flex-col gap-3'>
 			{isFetching ? (
-				Array.from({ length: 4 }).map((_, i) => (
+				Array.from({ length: 10 }).map((_, i) => (
 					<div
 						key={`skeleton-${i}`}
 						className='flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card animate-pulse'
@@ -66,15 +66,15 @@ export function ListView({
 			) : (
 				mythFacts.map((guide) => (
 					<div
-						key={guide.id}
-						className={`group flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card hover:border-border hover:shadow-xs transition-all cursor-pointer ${guide.is_deleted ? 'opacity-50' : 'opacity-100'}`}
+						key={guide?.id}
+						className={`group flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card hover:border-border hover:shadow-xs transition-all cursor-pointer ${guide?.is_deleted ? 'opacity-50' : 'opacity-100'}`}
 						onClick={() => handleEdit(guide)}
 					>
 						<div className='w-16 h-16 rounded-md bg-muted/50 overflow-hidden shrink-0'>
-							{guide.image_url ? (
+							{guide?.displayImage?.fileHash ? (
 								<img
-									src={guide.image_url}
-									alt={guide.name}
+									src={`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${guide?.baseImagePath}/display_image.webp?q=${guide?.displayImage?.fileHash}`}
+									alt={guide?.name}
 									className='w-full h-full object-cover'
 								/>
 							) : (
@@ -85,31 +85,26 @@ export function ListView({
 						</div>
 
 						<div className='flex-1 min-w-0'>
-							<h3 className='font-medium text-sm truncate'>{guide.name}</h3>
+							<h3 className='font-medium text-sm truncate'>{guide?.name}</h3>
 							<div className='flex items-center gap-3 mt-1.5'>
 								<Badge className='text-xs gap-1'>
 									<BookOpen className='h-3 w-3' />
-									{guide.topics?.length ?? 0} topic
-									{(guide.topics?.length ?? 0) !== 1 ? 's' : ''}
+									{guide?.topics?.length ?? 0} topic
+									{(guide?.topics?.length ?? 0) !== 1 ? 's' : ''}
 								</Badge>
-								{guide.video_url && (
-									<Badge variant='outline' className='text-xs gap-1 '>
-										<Video className='h-3 w-3' />
-										Video
-									</Badge>
-								)}
-								{guide.sources?.length > 0 && (
+
+								{guide?.sources?.length > 0 && (
 									<Badge variant='secondary' className='text-xs gap-1'>
 										<Link className='h-3 w-3' />
-										{guide.sources.length} source
-										{guide.sources.length !== 1 ? 's' : ''}
+										{guide?.sources.length} source
+										{guide?.sources.length !== 1 ? 's' : ''}
 									</Badge>
 								)}
 							</div>
 						</div>
 
 						<div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0'>
-							{guide.is_deleted ? (
+							{guide?.is_deleted ? (
 								<Tooltip>
 									<TooltipTrigger>
 										<Button
@@ -120,7 +115,7 @@ export function ListView({
 												e.stopPropagation();
 												handleRestoreClick(guide);
 											}}
-											id={`delete-${guide.id}`}
+											id={`delete-${guide?.id}`}
 										>
 											<RestoreBin className='h-4 w-4 text-primary' />
 										</Button>
@@ -139,7 +134,7 @@ export function ListView({
 											e.stopPropagation();
 											handleEdit(guide);
 										}}
-										id={`edit-guide-${guide.id}`}
+										id={`edit-guide-${guide?.id}`}
 									>
 										<Pencil className='h-4 w-4' />
 									</Button>
@@ -151,7 +146,7 @@ export function ListView({
 											e.stopPropagation();
 											handleDeleteClick(guide);
 										}}
-										id={`delete-guide-${guide.id}`}
+										id={`delete-guide-${guide?.id}`}
 									>
 										<Trash className='h-4 w-4' />
 									</Button>

@@ -6,19 +6,33 @@ export const API_BASE_URL = import.meta.env.DEV
 	: 'https://us-central1-beauwise-1687a.cloudfunctions.net/admin';
 
 export const getUsers =
-	(maxPage: number, nextPage: string | null, pageCount: number) => async () => {
+	(maxPage: number, nextPageToken?: string | null, pageCount?: number) => async () => {
 		const token = await auth.currentUser?.getIdToken();
-		const respone = await fetch(
-			`${API_BASE_URL}/users?maxPage=${maxPage}&nextPageToken=${nextPage}&pageCount=${pageCount}`,
-			{
-				method: 'GET',
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
-			}
-		);
 
-		return respone.json();
+		const params = new URLSearchParams({
+			maxPage: maxPage.toString()
+		});
+
+		if (nextPageToken) {
+			params.append('nextPageToken', nextPageToken);
+		}
+
+		if (pageCount !== undefined && pageCount > 0) {
+			params.append('pageCount', pageCount.toString());
+		}
+
+		const response = await fetch(`${API_BASE_URL}/users?${params.toString()}`, {
+			method: 'GET',
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to fetch users');
+		}
+
+		return response.json();
 	};
 
 export const updateUserStatus = async function ({
@@ -35,7 +49,7 @@ export const updateUserStatus = async function ({
 			Authorization: `Bearer ${token}`,
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ updatedItem: status.replaceAll(" ", "_").toUpperCase() })
+		body: JSON.stringify({ updatedItem: status.replaceAll(' ', '_').toUpperCase() })
 	});
 
 	return respone.ok;

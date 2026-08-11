@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -29,6 +29,7 @@ import Loader from '@/components/icons/loader';
 import { generateId } from '@/utils/generate-id';
 import { Field, FieldError, FieldLabel } from '../ui/field';
 import FileAdd from '../icons/file-add';
+import _ from 'lodash';
 
 interface IngredientFormDialogProps {
 	open: boolean;
@@ -67,28 +68,7 @@ export function IngredientFormDialog({
 		resolver: zodResolver(ingredientFormSchema),
 		defaultValues
 	});
-
-	useEffect(() => {
-		if (open) {
-			if (ingredient) {
-				form.reset({
-					name: ingredient.name,
-					categories: ingredient.categories,
-					what_it_does:
-						ingredient.what_it_does.length > 0 ? ingredient.what_it_does : [''],
-					what_it_is: ingredient.what_it_is,
-					best_for: ingredient.best_for,
-					info: ingredient.info ?? '',
-					common_products: ingredient.common_products,
-					sources:
-						ingredient.sources.length > 0 ? ingredient.sources : [{ name: '', link: '' }],
-					safety_level: ingredient.safety_level ?? ''
-				});
-			} else {
-				form.reset(defaultValues);
-			}
-		}
-	}, [open, ingredient, form]);
+	const foo = form.watch();
 
 	const onSubmit = async (data: IngredientFormValues) => {
 		if (isEditing && ingredient) {
@@ -122,6 +102,28 @@ export function IngredientFormDialog({
 		label: p,
 		value: p
 	}));
+
+	useEffect(() => {
+		if (open) {
+			if (ingredient) {
+				form.reset({
+					name: ingredient.name,
+					categories: ingredient.categories,
+					what_it_does:
+						ingredient.what_it_does.length > 0 ? ingredient.what_it_does : [''],
+					what_it_is: ingredient.what_it_is,
+					best_for: ingredient.best_for,
+					info: ingredient.info ?? '',
+					common_products: ingredient.common_products,
+					sources:
+						ingredient.sources.length > 0 ? ingredient.sources : [{ name: '', link: '' }],
+					safety_level: ingredient.safety_level ?? ''
+				});
+			} else {
+				form.reset(defaultValues);
+			}
+		}
+	}, [open, ingredient, form]);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -295,7 +297,7 @@ export function IngredientFormDialog({
 							>
 								Cancel
 							</Button>
-							<Button type='submit' disabled={isPending}>
+							<Button type='submit' disabled={isPending || !form.formState.isDirty}>
 								{!isEditing && <FileAdd />}
 								{isPending && <Loader className='mr-2 h-4 w-4 animate-spin' />}
 								{isEditing ? 'Update' : 'Add'}

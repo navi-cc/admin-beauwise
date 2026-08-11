@@ -18,16 +18,19 @@ import type {
 	ChangeRolePayload,
 	ForceLogoutPayload,
 	AuditLogEntry,
-    CancelDeletionPayload
+	CancelDeletionPayload
 } from '@/types/user';
 import type { OnChangeFn, PaginationState } from '@tanstack/react-table';
 import { CancelDeletionDialog } from './cancel-deletion-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Button } from '../ui/button';
+import ChevronDown from '../icons/chevron-down';
 interface UserManagementTableProps {
 	users: User[];
 
 	onResetPassword: (payload: User) => void;
 	onChangeEmail: (payload: ChangeEmailPayload) => void;
-    onCancelDeletion: (payload: CancelDeletionPayload) => void;
+	onCancelDeletion: (payload: CancelDeletionPayload) => void;
 	onDisableUser: (payload: DisableUserPayload) => void;
 	onDeleteUser: (payload: DeleteUserPayload) => void;
 
@@ -38,6 +41,7 @@ interface UserManagementTableProps {
 	pageCount: number;
 	pageIndex: number;
 	pageSize: number;
+	onPageSizeChange: (size: number) => () => void;
 	onPaginationChange: OnChangeFn<PaginationState>;
 }
 export function UserManagementTable({
@@ -48,10 +52,10 @@ export function UserManagementTable({
 	pageSize,
 	onPaginationChange,
 	onChangeEmail,
-    onCancelDeletion,
+	onCancelDeletion,
 	onDisableUser,
 	onDeleteUser,
-
+	onPageSizeChange,
 	isUserTableLoading,
 	isError,
 	isRefetchError,
@@ -75,10 +79,10 @@ export function UserManagementTable({
 					setSelectedUser(user);
 					setEmailDialogOpen(true);
 				},
-                onCancelDeletion: (user) => {
-                    setSelectedUser(user);
-                    setCancelDeletionDialogOpen(true);
-                },
+				onCancelDeletion: (user) => {
+					setSelectedUser(user);
+					setCancelDeletionDialogOpen(true);
+				},
 				onDisableUser: (user) => {
 					setSelectedUser(user);
 					setDisableDialogOpen(true);
@@ -97,6 +101,7 @@ export function UserManagementTable({
 				isRefetchError={isRefetchError}
 				isUserTableLoading={isUserTableLoading}
 				retry={retry}
+				onPageSizeChange={onPageSizeChange}
 				pageCount={pageCount}
 				pageIndex={pageIndex}
 				pageSize={pageSize}
@@ -108,7 +113,7 @@ export function UserManagementTable({
 			/>
 
 			<ResetPasswordDialog
-				user={selectedUser}
+				user={selectedUser as User}
 				open={passwordDialogOpen}
 				onOpenChange={setPasswordDialogOpen}
 				onSubmit={onResetPassword}
@@ -121,12 +126,12 @@ export function UserManagementTable({
 				onSubmit={onChangeEmail}
 			/>
 
-            <CancelDeletionDialog 
+			<CancelDeletionDialog
 				user={selectedUser}
 				open={cancelDeletionDialogOpen}
 				onOpenChange={setCancelDeletionDialogOpen}
 				onConfirm={onCancelDeletion}
-            />
+			/>
 
 			<DisableUserDialog
 				user={selectedUser}

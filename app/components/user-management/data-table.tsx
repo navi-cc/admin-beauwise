@@ -24,6 +24,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import RefreshCw from '../icons/refresh-cw';
 import AlertCircle from '../icons/alert-circle';
+import type { User } from '@/types/user';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import ChevronDown from '../icons/chevron-down';
+import Refresh from '../icons/refresh';
+import ChevronRight from '../icons/chevron-right';
+import ChevronLeft from '../icons/chevron-left';
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
@@ -33,7 +39,7 @@ interface DataTableProps<TData, TValue> {
 	pageIndex: number;
 	pageSize: number;
 	onPaginationChange: OnChangeFn<PaginationState>;
-
+	onPageSizeChange: (size: number) => () => void;
 	isUserTableLoading: boolean;
 	isRefetchError: boolean;
 	isError: boolean;
@@ -48,7 +54,7 @@ export function DataTable<TData, TValue>({
 	pageIndex,
 	pageSize,
 	onPaginationChange,
-
+	onPageSizeChange,
 	isUserTableLoading,
 	isError,
 	isRefetchError,
@@ -59,7 +65,6 @@ export function DataTable<TData, TValue>({
 	const table = useReactTable({
 		data,
 		columns,
-		rowCount: 10,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
@@ -79,7 +84,7 @@ export function DataTable<TData, TValue>({
 	});
 	return (
 		<div className='space-y-4'>
-			<div className='flex items-center'>
+			<div className='flex flex-col items-start gap-1.5'>
 				<Input
 					placeholder={searchPlaceholder}
 					value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
@@ -88,6 +93,35 @@ export function DataTable<TData, TValue>({
 					}
 					className='max-w-sm'
 				/>
+
+				<div className='flex gap-1.5'>
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button variant='outline' className='font-light'>
+									Rows: <span className='font-normal'>{pageSize}</span> <ChevronDown />
+								</Button>
+							}
+						/>
+						<PopoverContent align='end' className='w-20'>
+							{[10, 20, 30].map((size) => {
+								return (
+									<Button
+										onClick={onPageSizeChange(size)}
+										variant='ghost'
+										className={`font-light transition-colors duration-300 ${size === pageSize ? 'bg-muted' : 'bg-transparent'}`}
+									>
+										{size}
+									</Button>
+								);
+							})}
+						</PopoverContent>
+					</Popover>
+
+					<Button variant='outline' className='font-light' onClick={retry}>
+						Refresh <Refresh />
+					</Button>
+				</div>
 			</div>
 			<div className='rounded-md border'>
 				<Table>
@@ -163,15 +197,28 @@ export function DataTable<TData, TValue>({
 								</TableCell>
 							</TableRow>
 						) : (
-							table.getRowModel().rows.map((row) => (
-								<TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
-											{flexRender(cell.column.columnDef.cell, cell.getContext())}
-										</TableCell>
-									))}
-								</TableRow>
-							))
+							table.getRowModel().rows.map((row) => {
+								const isAdmin = (row.original as User).account_access.roles === 'admin';
+
+								return (
+									<TableRow
+										key={row.id}
+										data-state={row.getIsSelected() && 'selected'}
+										aria-disabled={isAdmin}
+										className={
+											isAdmin
+												? 'opacity-80 select-none bg-muted/30 hover:cursor-not-allowed '
+												: ''
+										}
+									>
+										{row.getVisibleCells().map((cell) => (
+											<TableCell key={cell.id}>
+												{flexRender(cell.column.columnDef.cell, cell.getContext())}
+											</TableCell>
+										))}
+									</TableRow>
+								);
+							})
 						)}
 					</TableBody>
 				</Table>
@@ -180,22 +227,23 @@ export function DataTable<TData, TValue>({
 				<div className='text-sm text-muted-foreground'>
 					Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
 				</div>
-				<div className='flex items-center space-x-2'>
+				<div className='flex items-center space-x-2 text-primary'>
 					<Button
 						variant='outline'
 						size='sm'
 						onClick={() => table.previousPage()}
 						disabled={!table.getCanPreviousPage()}
 					>
-						Previous
+						<ChevronLeft /> Previous
 					</Button>
 					<Button
 						variant='outline'
 						size='sm'
+						className='text-primary'
 						onClick={() => table.nextPage()}
 						disabled={!table.getCanNextPage()}
 					>
-						Next
+						Next <ChevronRight />
 					</Button>
 				</div>
 			</div>

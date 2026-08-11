@@ -27,7 +27,7 @@ export interface User {
 		lastSignInTime: string;
 		creationTime: string;
 	};
-    user_status: UserStatus;
+	status: UserStatus;
 }
 
 export interface ChangePasswordPayload {

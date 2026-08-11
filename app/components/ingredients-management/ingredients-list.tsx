@@ -239,8 +239,8 @@ export function IngredientTable() {
 	return (
 		<div className='space-y-2.5'>
 			<div>
-				<div className='text-1xl text-primary font-semibold flex items-center gap-2'>
-					<Books className='h-6 w-6 text-primary' />
+				<div className='text-2xl text-primary font-bold flex items-center gap-2'>
+					<Books className='size-6' />
 					Ingredients Glossary
 				</div>
 				<p className='text-sm text-muted-foreground mt-1'>

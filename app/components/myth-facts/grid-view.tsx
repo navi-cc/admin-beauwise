@@ -125,14 +125,15 @@ export function GridView({
 							</div>
 
 							<CardHeader className='pb-2'>
-								<CardTitle className='text-base line-clamp-1'>{item.name}</CardTitle>
+								<img
+									className='text-base line-clamp-1'
+									src={`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${item?.baseImagePath}/display_image.webp?q=${item?.displayImage?.fileHash}`}
+								/>
 							</CardHeader>
 
-							{/* <CardContent className='flex-1 pb-3'>
-                                <p className='text-sm text-muted-foreground line-clamp-3'>
-                                    {item.}
-                                </p>
-                            </CardContent> */}
+							<CardContent className='flex-1 pb-3'>
+								<CardTitle className='text-base line-clamp-1'>{item.name}</CardTitle>
+							</CardContent>
 
 							<CardFooter className='pt-0 pb-4'>
 								{item.sources && item.sources.length > 0 && (
