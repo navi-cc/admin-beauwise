@@ -28,9 +28,7 @@ export function DeleteUserDialog({
 	const isConfirmed = confirmEmail === user?.email;
 	const handleConfirm = () => {
 		if (!user || !isConfirmed) return;
-		onConfirm({
-			userId: user.id
-		});
+		onConfirm({ user });
 		setConfirmEmail('');
 		onOpenChange(false);
 	};

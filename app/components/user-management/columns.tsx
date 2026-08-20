@@ -13,11 +13,12 @@ import {
 import type { User } from '@/types/user';
 import ArrowUpDown from '@/components/icons/arrow-up-down';
 import MoreHorizontal from '@/components/icons/more-horizontal';
-import UserRoundCog from '../ui/user-round-cog';
-import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
-import { Mail } from '../icons/mail';
 import MailAccount from '../icons/mail-account';
 import GoogleIcon from '../icons/google';
+import UserIcon from '../icons/user';
+import { auth } from '@/lib/firebase';
+import Lock from '../icons/lock';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface ColumnActions {
 	onResetPassword: (user: User) => void;
@@ -34,29 +35,41 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 		{
 			accessorKey: 'email',
 			header: ({ column }) => (
-				<Button
-					variant='ghost'
-					onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-				>
-					Email
-					<ArrowUpDown />
-				</Button>
+				<div className='flex items-center gap-x-1.5'>
+					<UserIcon className='size-4' /> User
+				</div>
 			),
 			cell: ({ row }) => {
 				const user = row.original;
-				const isAdmin = user.account_access.roles === 'admin';
+
+				const display = user?.user_name ? user.user_name : user.email;
+
+				const isYou = auth.currentUser?.email === user.email;
 
 				return (
-					<Tooltip>
-						<TooltipTrigger>
-							<div className='flex items-center gap-2'>
-								<span>{row.getValue('email')}</span>
-								{isAdmin && <UserRoundCog className='h-4 w-4 text-primary' />}
-							</div>
-						</TooltipTrigger>
+					<div className='flex items-center gap-2'>
+						<span>{display}</span>
+						{isYou && <span className='italic text-black/65'>You</span>}
+					</div>
+				);
+			}
+		},
 
-						<TooltipContent>Admin</TooltipContent>
-					</Tooltip>
+		{
+			header: 'Privileges',
+			cell: ({ row }) => {
+				const user = row.original;
+
+				return (
+					<Badge
+						variant='default'
+						className={`capitalize ${user.account_access.role === 'superadmin' ? 'bg-red-400' : user.account_access.role === 'admin' ? 'bg-blue-400' : ''}`}
+						style={{ textTransform: 'capitalize' }}
+					>
+						{user.account_access.role === 'basic'
+							? 'App Member'
+							: user.account_access.role}
+					</Badge>
 				);
 			}
 		},
@@ -64,11 +77,13 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 		{
 			header: 'Provider',
 			cell: ({ row }) => {
+				const isSuperAdmin = useAuthStore((state) => state.isSuperAdmin);
 				const user = row.original;
-
 				const provider = user.providerId;
 
-				return (
+				return user.account_access.role === 'superadmin' ? (
+					<Lock className='size-4 self-center' />
+				) : (
 					<div className='flex flex-1'>
 						{provider === 'password' && <MailAccount className='size-5 self-center' />}
 						{provider === 'google.com' && <GoogleIcon className='size-5 self-center' />}
@@ -78,22 +93,25 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 		},
 
 		{
-			accessorKey: 'account_disable',
 			header: 'Status',
 			cell: ({ row }) => {
-				const accountDisable = row.getValue('account_disable');
-				const status = row.original.status;
+				const user = row.original;
+				const status = user.status;
+				const role = user.account_access.role;
 
-				return (
+				const isSuperAdmin = role === 'superadmin';
+				return isSuperAdmin ? (
+					<Lock className='size-4 self-center' />
+				) : (
 					<Badge
-						variant={!accountDisable ? 'default' : 'secondary'}
+						className={`${status === 'DISABLED' ? 'bg-neutral-500' : status === 'PENDING_DELETION' ? 'bg-orange-400' : 'bg-green-600'}`}
 						style={{ textTransform: 'capitalize' }}
 					>
-						{!status
-							? !accountDisable
-								? 'active'
-								: 'disabled'
-							: status.toString().replaceAll('_', ' ').toLowerCase()}
+						{status === 'DISABLED'
+							? 'Suspended'
+							: status === 'PENDING_DELETION'
+								? 'Pending Deletion'
+								: 'Active'}
 					</Badge>
 				);
 			}
@@ -111,13 +129,20 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 				</Button>
 			),
 			cell: ({ row }) => {
+				const user = row.original;
+				const isSuperAdmin = user.account_access.role === 'superadmin';
+
 				const date = new Date(row.getValue('creationTime'));
 
-				return date.toLocaleDateString('en-US', {
-					year: 'numeric',
-					month: 'short',
-					day: 'numeric'
-				});
+				return isSuperAdmin ? (
+					<Lock className='size-4 self-center' />
+				) : (
+					date.toLocaleDateString('en-US', {
+						year: 'numeric',
+						month: 'short',
+						day: 'numeric'
+					})
+				);
 			}
 		},
 		{
@@ -126,19 +151,17 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 			cell: ({ row }) => {
 				const user = row.original;
 				const isDisabled = user.account_disable;
-				const isAdmin = user.account_access.roles === 'admin';
+				const isSuperAdmin = user.account_access.role === 'superadmin';
+
 				const isOAuthUser = user.providerId === 'google.com';
 				const isPendingDeletion = user.status === 'PENDING_DELETION';
-				return (
+				return isSuperAdmin || auth.currentUser?.email === user.email ? (
+					<Lock className='size-4 self-center' />
+				) : (
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							render={(props) => (
-								<Button
-									{...props}
-									variant='ghost'
-									className={`h-8 w-8 p-0 ${isAdmin ? 'pointer-events-none' : 'pointer-events-auto'}`}
-								>
-									<span className='sr-only'>Open menu</span>
+								<Button {...props} variant='ghost' className={`h-8 w-8 p-0`}>
 									<MoreHorizontal />
 								</Button>
 							)}

@@ -1,8 +1,17 @@
+import BadgeAlert from '@/components/icons/badge-alert';
+import Check from '@/components/icons/check';
+import CheckMarkBadge from '@/components/icons/checkmark-badge';
 import UserMultipleIcon from '@/components/icons/user-multiple';
 import { UserManagementTable } from '@/components/user-management/user-table';
-import { deleteUser, getUsers, updateUserStatus } from '@/lib/api';
+import { addUser as addNewUser, deleteUser, getUsers, updateUserStatus } from '@/lib/api';
 import { auth } from '@/lib/firebase';
-import type { User } from '@/types/user';
+import type {
+	AddUserPayload,
+	CancelDeletionPayload,
+	DeleteUserPayload,
+	DisableUserPayload,
+	User
+} from '@/types/user';
 import {
 	keepPreviousData,
 	useMutation,
@@ -87,45 +96,176 @@ export default function UserManagement() {
 		}
 	});
 
+	const addUser = useMutation({
+		mutationFn: addNewUser,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['users'] });
+		}
+	});
+
 	const deleteUserMutate = useMutation({
 		mutationFn: deleteUser,
 		onSuccess: () => {
-			toast.success('The user has been successfully removed.');
 			queryClient.invalidateQueries({ queryKey: ['users'] });
 		}
 	});
 
 	const onResetPassword = async (user: User) => {
-		await sendPasswordResetEmail(auth, user.email);
-		toast.success(`The reset password link is successfully sent to ${user.email}.`);
+		const currentSignedInClaims = (await auth.currentUser?.getIdTokenResult())?.claims;
+		const isAllowed =
+			(currentSignedInClaims?.role === 'admin' ||
+				currentSignedInClaims?.role === 'superadmin') &&
+			user.account_access.role === 'basic';
+
+		try {
+			if (isAllowed) {
+				await sendPasswordResetEmail(auth, user.email);
+				toast.success(`Password Reset Link Sent`, {
+					position: 'top-right',
+					description: `The reset password link is successfully sent to ${user.email}.`,
+					descriptionClassName: 'text-red',
+					duration: 12000,
+					icon: <CheckMarkBadge className='text-green-500 size-5' />
+				});
+			} else {
+				throw new Error('Requested action is not allowed. Please try again');
+			}
+		} catch (err: any) {
+			let message = 'The password reset link is not sent. Please try again.';
+
+			if (err?.message) {
+				message = err?.message;
+			}
+
+			toast.error('Password Reset Action Failed', {
+				description: message,
+				position: 'top-right',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />
+			});
+		}
 	};
 
-	const onChangeEmail = (data: any) => {
-		console.log('email', data);
-	};
-
-	const onCancelDeletion = (data: any) => {
+	const onCancelDeletion = (data: CancelDeletionPayload) => {
 		data.status = 'remove_pending_deletion';
-		toast.promise(accountStatusChange.mutateAsync(data), {
-			position: 'bottom-right',
-			loading: 'Updating account status...',
-			success: () => 'Account status updated.',
-			error: 'Your changes were not saved. Please try again'
+		accountStatusChange.mutate(data, {
+			onSuccess: () => {
+				toast.success(`User Account Deletion Cancelled`, {
+					position: 'top-right',
+					description: `The ${data.user.email} account deletion is successfully cancelled.`,
+					descriptionClassName: 'text-red',
+					duration: 12000,
+					icon: <CheckMarkBadge className='text-green-500 size-5' />
+				});
+			},
+
+			onError: (err) => {
+				let message = 'Something went wrong. Please try again.';
+
+				if (err?.message) {
+					message = err.message;
+				}
+
+				toast.error('Account Delete Cancellation Action Failed', {
+					description: message,
+					position: 'top-right',
+					duration: 12000,
+					icon: <BadgeAlert className='text-red-500 size-5' />
+				});
+			}
 		});
 	};
 
-	const onDisableUser = (data: any) => {
-		data.status = 'disabled';
-		toast.promise(accountStatusChange.mutateAsync(data), {
-			position: 'bottom-right',
-			loading: 'Updating account status...',
-			success: () => 'Account status updated.',
-			error: 'Your changes were not saved. Please try again'
+	const onDisableUser = (data: DisableUserPayload) => {
+		accountStatusChange.mutate(data, {
+			onSuccess: (result) => {
+				let message = 'Account status updated.';
+
+				if (result?.message) {
+					message = '';
+				}
+
+				toast.success('User Status Updated', {
+					position: 'top-right',
+					description: `${data.user?.user_name ? data.user.user_name : data.user.email} status has been updated to ${data.status}`,
+					descriptionClassName: 'text-red',
+					duration: 20000,
+					icon: <CheckMarkBadge className='text-green-500 size-5' />
+				});
+			},
+			onError: (err) => {
+				let message = 'Your changes were not saved. Please try again';
+
+				if (err.message) {
+					message = err.message;
+				}
+
+				toast.error(message, {
+					position: 'top-right',
+					duration: 12000
+				});
+			}
 		});
 	};
 
-	const onDeleteUser = ({ userId }: { userId: string }) => {
-		deleteUserMutate.mutate({ userId });
+	const onDeleteUser = (payload: DeleteUserPayload) => {
+		deleteUserMutate.mutate(
+			{ userId: payload.user.id, role: payload.user.account_access.role },
+			{
+				onSuccess: () => {
+					toast.success(
+						`${payload.user.user_name ? payload.user.user_name : payload.user.email} is successfully deleted.`,
+						{
+							position: 'top-right',
+							duration: 12000
+						}
+					);
+				},
+
+				onError: (err) => {
+					let message = `${payload.user.user_name ? payload.user.user_name : payload.user.email} is not deleted. Please try again`;
+
+					if (err.message) {
+						message = err.message;
+					}
+
+					toast.error(message, {
+						position: 'top-right',
+						duration: 12000
+					});
+				}
+			}
+		);
+	};
+
+	const onAddUser = (payload: AddUserPayload) => {
+		addUser.mutate(
+			{ ...payload },
+			{
+				onSuccess: (result) => {
+					if (result?.code === 'invalid_input') {
+						throw new Error(`${payload.email} is not created. Please try again`);
+					}
+
+					toast.success(`${payload.email} is successfully created.`, {
+						position: 'top-right',
+						duration: 12000
+					});
+				},
+				onError: (err) => {
+					let message = `${payload.email} is not created. Please try again`;
+
+					if (err.message) {
+						message = err.message;
+					}
+
+					toast.error(message, {
+						position: 'top-right',
+						duration: 12000
+					});
+				}
+			}
+		);
 	};
 
 	const retry = () => refetch();
@@ -141,7 +281,9 @@ export default function UserManagement() {
 				{isSuccess && (
 					<p className='text-sm text-muted-foreground mt-1'>
 						Manage users{' '}
-						{data?.length > 0 && <span className='font-medium'>{data.length} total</span>}
+						{data?.totalUsers > 0 && (
+							<span className='font-medium'>{data?.totalUsers} total</span>
+						)}
 					</p>
 				)}
 			</div>
@@ -157,10 +299,10 @@ export default function UserManagement() {
 				pageIndex={pagination.pageIndex}
 				pageSize={pagination.pageSize}
 				onPageSizeChange={handlePageSize}
-				onChangeEmail={onChangeEmail}
 				onCancelDeletion={onCancelDeletion}
 				onResetPassword={onResetPassword}
 				onDisableUser={onDisableUser}
+				onAddUser={onAddUser}
 			/>
 		</div>
 	);

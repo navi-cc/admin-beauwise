@@ -145,20 +145,9 @@ body {
 	--sidebar-ring: oklch(0.6557 0.1931 286.22);
 }
 
-/* [data-sonner-toaster] {
-	max-height: 80vh;
-	overflow-y: auto; 
-	pointer-events: auto; 
-} */
-
-/* Optional: Smooth out the scrollbar look */
-/* [data-sonner-toaster]::-webkit-scrollbar {
-	width: 6px;
-} */
-/* [data-sonner-toaster]::-webkit-scrollbar-thumb {
-	background-color: rgba(0, 0, 0, 0.2);
-	border-radius: 4px;
-} */
+[data-sonner-toaster][data-sonner-theme='dark'] [data-description] {
+	color: #989898 !important ;
+}
 
 @layer base {
 	* {

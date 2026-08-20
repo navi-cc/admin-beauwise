@@ -1,17 +1,17 @@
-export type UserStatus = 'active' | 'disabled' | 'pending_deletion';
+export type UserStatus = 'ACTIVE' | 'DISABLED' | 'PENDING_DELETION';
 
-type Roles = 'admin' | 'client';
+type Roles = 'admin' | 'superadmin' | 'basic';
 
-const permissions = [
-	'read:documents',
-	'create:documents',
-	'delete:documents',
-	'update:documents'
-] as const;
+// const permissions = [
+// 	'read:documents',
+// 	'create:documents',
+// 	'delete:documents',
+// 	'update:documents'
+// ] as const;
 
 type AccountAccess = {
-	roles: Roles;
-	permisions: (typeof permissions)[number][];
+	role: Roles;
+	permissions: string[];
 };
 
 export type ProviderId = 'password' | 'google.com';
@@ -27,6 +27,7 @@ export interface User {
 		lastSignInTime: string;
 		creationTime: string;
 	};
+	user_name?: string;
 	status: UserStatus;
 }
 
@@ -40,18 +41,25 @@ export interface ChangeEmailPayload {
 }
 
 export interface CancelDeletionPayload {
-	userId: string;
+	user: User;
 	status: string;
 }
 
 export interface DisableUserPayload {
-	userId: string;
+	user: User;
 	status: string;
 }
 
 export interface DeleteUserPayload {
-	userId: string;
+	user: User;
 }
+
+export interface AddUserPayload {
+	email: string;
+	role: string;
+	password: string;
+}
+
 export interface ChangeRolePayload {
 	userId: string;
 	newRole: Roles;

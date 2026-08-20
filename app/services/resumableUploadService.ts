@@ -11,11 +11,6 @@ export async function startResumableUpload(uploadId: string): Promise<void> {
 		item.status === 'completed' ||
 		(item.status === 'uploading' && item.uploadTask)
 	) {
-		console.log('upload not started');
-		console.log('upload not started because of', item);
-		console.log('upload not started because of', item.status);
-		console.log('upload not started because of', item.uploadTask);
-
 		return;
 	}
 
@@ -25,8 +20,6 @@ export async function startResumableUpload(uploadId: string): Promise<void> {
 			const uploadTask = uploadBytesResumable(storageRef, item.file);
 
 			store.setUploadTask(uploadId, uploadTask);
-
-			console.log('upload started');
 
 			uploadTask.on(
 				'state_changed',

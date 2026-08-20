@@ -101,11 +101,16 @@ export function ActivityLog({
 	const {
 		data: logs,
 		isLoading,
+		refetch,
 		error,
 		isError,
 		isRefetchError
 	} = useActivityLogs(promptId);
 	const [actionFilter, setActionFilter] = React.useState<string>('all');
+
+	const retry = () => {
+		refetch({ throwOnError: true });
+	};
 
 	const filteredLogs = React.useMemo(() => {
 		if (!logs) return [];
@@ -142,10 +147,10 @@ export function ActivityLog({
 							</div>
 						))}
 					</div>
-				) : error ? (
-					<div className='text-center py-6 text-sm text-muted-foreground'>
+				) : isError || isRefetchError ? (
+					<div className='text-center py-6 text-sm text-muted-foreground flex-col gap-y-1'>
 						Failed to load activity logs.
-						<Button>
+						<Button onClick={retry}>
 							Retry <RotateCcw />
 						</Button>
 					</div>

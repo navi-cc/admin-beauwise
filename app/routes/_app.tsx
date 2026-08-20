@@ -11,8 +11,10 @@ export async function clientLoader() {
 	await auth.authStateReady();
 
 	const user = await auth.currentUser?.getIdTokenResult();
+	const isCurrentlySignedIn = auth.currentUser;
+	const isAllowed = user?.claims.role === 'admin' || user?.claims.role === 'superadmin';
 
-	if (!auth.currentUser || user?.claims.roles !== 'admin') {
+	if (!isCurrentlySignedIn || !isAllowed) {
 		throw redirect('/sign-in');
 	}
 }

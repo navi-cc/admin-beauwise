@@ -30,6 +30,7 @@ import ChevronDown from '../icons/chevron-down';
 import Refresh from '../icons/refresh';
 import ChevronRight from '../icons/chevron-right';
 import ChevronLeft from '../icons/chevron-left';
+import Plus from '../icons/plus';
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
@@ -40,6 +41,7 @@ interface DataTableProps<TData, TValue> {
 	pageSize: number;
 	onPaginationChange: OnChangeFn<PaginationState>;
 	onPageSizeChange: (size: number) => () => void;
+	onOpenAddDialog: (open: boolean) => void;
 	isUserTableLoading: boolean;
 	isRefetchError: boolean;
 	isError: boolean;
@@ -55,6 +57,7 @@ export function DataTable<TData, TValue>({
 	pageSize,
 	onPaginationChange,
 	onPageSizeChange,
+	onOpenAddDialog,
 	isUserTableLoading,
 	isError,
 	isRefetchError,
@@ -120,6 +123,14 @@ export function DataTable<TData, TValue>({
 
 					<Button variant='outline' className='font-light' onClick={retry}>
 						Refresh <Refresh />
+					</Button>
+
+					<Button
+						variant='outline'
+						className='font-light'
+						onClick={() => onOpenAddDialog(true)}
+					>
+						Add User <Plus />
 					</Button>
 				</div>
 			</div>

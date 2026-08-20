@@ -5,17 +5,8 @@ import Lock from '@/components/icons/lock';
 import Logo from '@/components/icons/logo';
 import { Mail } from '@/components/icons/mail';
 import { Button } from '@/components/ui/button';
-import {
-	Card,
-	CardAction,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -24,6 +15,7 @@ import {
 } from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import { auth } from '@/lib/firebase';
+import { useAuthStore } from '@/store/useAuthStore';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { FirebaseError } from 'firebase/app';
@@ -49,8 +41,9 @@ export async function clientLoader() {
 	await auth.authStateReady();
 
 	const user = await auth.currentUser?.getIdTokenResult();
+	const isAllowed = user?.claims.role === 'admin' || user?.claims.role === 'superadmin';
 
-	if (auth.currentUser && user?.claims.roles === 'admin') {
+	if (auth.currentUser && isAllowed) {
 		return redirect('/');
 	}
 
@@ -80,9 +73,16 @@ export default function SignIn() {
 		onSuccess: async () => {
 			const user = await auth.currentUser?.getIdTokenResult();
 
-			if (user?.claims.roles === 'admin') {
+			const isAllowed =
+				user?.claims.role === 'admin' || user?.claims.role === 'superadmin';
+
+			if (isAllowed) {
+				if (user.claims.role === 'superadmin') {
+					useAuthStore.getState().setIsSuperAdmin(true);
+				}
+
 				navigate('/');
-				toast.success('Logged in successfully!', { position: 'top-center' });
+				toast.success('Logged in successfully!', { position: 'top-right' });
 			} else {
 				throw new FirebaseError(
 					'permission-denied',

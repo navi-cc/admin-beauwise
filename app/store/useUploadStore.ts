@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { type UploadTask } from 'firebase/storage';
+import { QueryClient } from '@tanstack/react-query';
+import { queryClient } from '@/lib/query-client';
 
 export type UploadStatus = 'pending' | 'uploading' | 'completed' | 'error' | 'cancelled';
 
@@ -53,6 +55,8 @@ interface UploadStoreState {
 	dismissCompleted: () => void;
 	toggleMinimized: () => void;
 	setIsMinimized: (minimized: boolean) => void;
+	invalidationKey: string[];
+	setInvalidationKey: (key: string[]) => void;
 }
 
 export const useUploadStore = create<UploadStoreState>((set, get) => ({
@@ -61,6 +65,9 @@ export const useUploadStore = create<UploadStoreState>((set, get) => ({
 	maxConcurrent: 3,
 	activeUploadsCount: 0,
 	completedUploadsCount: 0,
+
+	invalidationKey: [],
+	setInvalidationKey: (key: string[]) => set({ invalidationKey: key }),
 
 	enqueueUploads: (payloads) => {
 		const currentUploads = { ...get().uploads };
@@ -240,6 +247,7 @@ export const useUploadStore = create<UploadStoreState>((set, get) => ({
 					bytesTransferred: 0,
 					speed: 0,
 					eta: 0,
+					uploadTask: undefined,
 					lastProgressTime: Date.now()
 				}
 			}
@@ -303,6 +311,8 @@ async function processQueue(
 		.slice(0, availableSlots);
 
 	if (pendingItems.length === 0) {
+		queryClient.invalidateQueries({ queryKey: state.invalidationKey });
+
 		return;
 	}
 

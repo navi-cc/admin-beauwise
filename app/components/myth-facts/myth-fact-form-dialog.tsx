@@ -179,7 +179,13 @@ export function MythFactFormDialog({
 			});
 		}
 
-		setDisplayImagePreview(null);
+		if (isEditing) {
+			// setDisplayImagePreview(
+			// 	`${import.meta.env.VITE_CDN_BEAUWISE}/learn/${mythFact?.baseImagePath}/display_image.webp?q=${mythFact?.displayImage?.fileHash}`
+			// );
+		} else {
+			setDisplayImagePreview(null);
+		}
 	};
 
 	const handleRemoveVideo = (e: any) => {
@@ -194,7 +200,13 @@ export function MythFactFormDialog({
 			});
 		}
 
-		setVideoGuidePreview(null);
+		if (isEditing) {
+			// setVideoGuidePreview(
+			// 	`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${mythFact?.baseImagePath}/video_guide.mp4?q=${mythFact?.videoGuide?.fileHash}`
+			// );
+		} else {
+			setVideoGuidePreview(null);
+		}
 	};
 
 	const generateHash = (str: string) => {
@@ -338,8 +350,6 @@ export function MythFactFormDialog({
 	useEffect(() => {
 		if (open) {
 			if (mythFact) {
-				console.log(mythFact);
-
 				form.reset({
 					name: mythFact.name,
 					id: mythFact.id,
@@ -750,11 +760,11 @@ export function MythFactFormDialog({
 															{...f}
 															className='h-8 text-sm'
 														/>
-														{f.value && (
+														{/* {f.value && (
 															<p className='text-[10px] text-muted-foreground'>
 																ID: {generateId(f.value)}
 															</p>
-														)}
+														)} */}
 														<FieldError errors={[error]} />
 													</Field>
 												)}

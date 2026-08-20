@@ -17,6 +17,7 @@ interface UpdateItemParams {
 
 export function useAddConsumer() {
 	const queryClient = useQueryClient();
+	const setInvalidationKey = useUploadStore((state) => state.setInvalidationKey);
 
 	return useMutation({
 		mutationFn: async ({ data }: AddItemParams) => {
@@ -27,7 +28,7 @@ export function useAddConsumer() {
 
 			if (data.file) {
 				payloads.push({
-					storagePath: `${baseStoragePath}/${id}`,
+					storagePath: `${baseStoragePath}/${id}.webp`,
 					fileType: 'image',
 					file: data.file,
 					batchId,
@@ -36,6 +37,7 @@ export function useAddConsumer() {
 			}
 
 			if (payloads.length > 0) {
+				setInvalidationKey([...consumerGuideKeys.all]);
 				useUploadStore.getState().enqueueUploads(payloads);
 			}
 
@@ -49,8 +51,6 @@ export function useAddConsumer() {
 				is_deleted: false
 			};
 
-			console.log(newData);
-
 			return consumerGuideService.add({ ...newData });
 		},
 		onSuccess: () => {
@@ -61,7 +61,7 @@ export function useAddConsumer() {
 
 export function useUpdateConsumer() {
 	const queryClient = useQueryClient();
-
+	const setInvalidationKey = useUploadStore((state) => state.setInvalidationKey);
 	return useMutation({
 		mutationFn: async ({ data }: UpdateItemParams) => {
 			const id = data.imageId;
@@ -71,7 +71,7 @@ export function useUpdateConsumer() {
 
 			if (data.file) {
 				payloads.push({
-					storagePath: `${baseStoragePath}/${id}`,
+					storagePath: `${baseStoragePath}/${id}.webp`,
 					fileType: 'image',
 					file: data.file,
 					batchId,
@@ -80,6 +80,7 @@ export function useUpdateConsumer() {
 			}
 
 			if (payloads.length > 0) {
+				setInvalidationKey([...consumerGuideKeys.all]);
 				useUploadStore.getState().enqueueUploads(payloads);
 			}
 

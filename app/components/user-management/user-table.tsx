@@ -18,22 +18,24 @@ import type {
 	ChangeRolePayload,
 	ForceLogoutPayload,
 	AuditLogEntry,
-	CancelDeletionPayload
+	CancelDeletionPayload,
+	AddUserPayload
 } from '@/types/user';
 import type { OnChangeFn, PaginationState } from '@tanstack/react-table';
 import { CancelDeletionDialog } from './cancel-deletion-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Button } from '../ui/button';
 import ChevronDown from '../icons/chevron-down';
+import { AddUserDialog } from './add-user-dialog';
 interface UserManagementTableProps {
 	users: User[];
 
 	onResetPassword: (payload: User) => void;
-	onChangeEmail: (payload: ChangeEmailPayload) => void;
+
 	onCancelDeletion: (payload: CancelDeletionPayload) => void;
 	onDisableUser: (payload: DisableUserPayload) => void;
 	onDeleteUser: (payload: DeleteUserPayload) => void;
-
+	onAddUser: (payload: AddUserPayload) => void;
 	isUserTableLoading: boolean;
 	isError: boolean;
 	isRefetchError: boolean;
@@ -51,9 +53,10 @@ export function UserManagementTable({
 	pageIndex,
 	pageSize,
 	onPaginationChange,
-	onChangeEmail,
+
 	onCancelDeletion,
 	onDisableUser,
+	onAddUser,
 	onDeleteUser,
 	onPageSizeChange,
 	isUserTableLoading,
@@ -67,7 +70,7 @@ export function UserManagementTable({
 	const [cancelDeletionDialogOpen, setCancelDeletionDialogOpen] = useState(false);
 	const [disableDialogOpen, setDisableDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
+	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	const columns = useMemo(
 		() =>
 			getUserColumns({
@@ -105,6 +108,7 @@ export function UserManagementTable({
 				pageCount={pageCount}
 				pageIndex={pageIndex}
 				pageSize={pageSize}
+				onOpenAddDialog={setAddDialogOpen}
 				onPaginationChange={onPaginationChange}
 				columns={columns}
 				data={users}
@@ -119,12 +123,12 @@ export function UserManagementTable({
 				onSubmit={onResetPassword}
 			/>
 
-			<ChangeEmailDialog
+			{/* <ChangeEmailDialog
 				user={selectedUser}
 				open={emailDialogOpen}
 				onOpenChange={setEmailDialogOpen}
 				onSubmit={onChangeEmail}
-			/>
+			/> */}
 
 			<CancelDeletionDialog
 				user={selectedUser}
@@ -138,6 +142,12 @@ export function UserManagementTable({
 				open={disableDialogOpen}
 				onOpenChange={setDisableDialogOpen}
 				onConfirm={onDisableUser}
+			/>
+
+			<AddUserDialog
+				open={addDialogOpen}
+				onOpenChange={setAddDialogOpen}
+				onConfirm={onAddUser}
 			/>
 
 			<DeleteUserDialog

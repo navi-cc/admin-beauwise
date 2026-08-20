@@ -16,7 +16,7 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 
 if (import.meta.env.DEV) {
-	const localIP = ['127.0.0.1', '192.168.0.100', '10.141.21.222'];
+	const localIP = ['127.0.0.1', '192.168.0.102', '10.141.21.222'];
 	connectFirestoreEmulator(db, localIP[1], 8080);
 	connectAuthEmulator(auth, `http://${localIP[1]}:9099`);
 	connectStorageEmulator(storage, localIP[1], 9199);

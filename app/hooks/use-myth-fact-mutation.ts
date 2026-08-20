@@ -8,6 +8,7 @@ import { v4 as uuidV4 } from 'uuid';
 
 export function useAddMythFact() {
 	const queryClient = useQueryClient();
+	const setInvalidationKey = useUploadStore((state) => state.setInvalidationKey);
 
 	return useMutation({
 		mutationFn: async ({ data }: { data: MythFactFormValues }) => {
@@ -21,7 +22,7 @@ export function useAddMythFact() {
 					id: `${id}_display_image`,
 					file: data.displayImage.file,
 					fileType: 'image',
-					storagePath: `${baseStoragePath}/${id}/display_image`,
+					storagePath: `${baseStoragePath}/${id}/display_image.webp`,
 					batchId
 				});
 			}
@@ -31,14 +32,13 @@ export function useAddMythFact() {
 					id: `${id}_video_guide`,
 					file: data.videoGuide.file,
 					fileType: 'video',
-					storagePath: `${baseStoragePath}/${id}/video_guide`,
+					storagePath: `${baseStoragePath}/${id}/video_guide.mp4`,
 					batchId
 				});
 			}
 
 			const topicsUUID = data.topics.map((topic) => {
-				const topicId = generateId(topic.topic);
-				return `${topicId}-${uuidV4()}`;
+				return `topic-${uuidV4()}`;
 			});
 
 			data.topics.forEach((topic, index) => {
@@ -48,13 +48,14 @@ export function useAddMythFact() {
 						id: `${id}_${topicId}_${topic.fileHash}`,
 						file: topic.file,
 						fileType: 'image',
-						storagePath: `${baseStoragePath}/${id}/${topicsUUID[index]}`,
+						storagePath: `${baseStoragePath}/${id}/${topicsUUID[index]}.webp`,
 						batchId
 					});
 				}
 			});
 
 			if (payloads.length > 0) {
+				setInvalidationKey([...mythFactKeys.all]);
 				useUploadStore.getState().enqueueUploads(payloads);
 			}
 
@@ -85,6 +86,7 @@ export function useAddMythFact() {
 
 export function useUpdateMythFact() {
 	const queryClient = useQueryClient();
+	const setInvalidationKey = useUploadStore((state) => state.setInvalidationKey);
 
 	const baseStoragePath = 'learn';
 	return useMutation({
@@ -98,7 +100,7 @@ export function useUpdateMythFact() {
 					id: `${id}_display_image`,
 					file: data.displayImage.file,
 					fileType: 'image',
-					storagePath: `${baseStoragePath}/${id}/display_image`,
+					storagePath: `${baseStoragePath}/${id}/display_image.webp`,
 					batchId
 				});
 			}
@@ -108,25 +110,35 @@ export function useUpdateMythFact() {
 					id: `${id}_video_guide`,
 					file: data.videoGuide.file,
 					fileType: 'video',
-					storagePath: `${baseStoragePath}/${id}/video_guide`,
+					storagePath: `${baseStoragePath}/${id}/video_guide.mp4`,
 					batchId
 				});
 			}
 
-			data.topics.forEach((topic) => {
+			const topics = data.topics.map((topic) => {
+				const imageId = topic?.imageId ? topic.imageId : `topic-${uuidV4()}`;
+				return {
+					...topic,
+					imageId
+				};
+			});
+
+			topics.forEach((topic) => {
 				if (topic.file) {
 					const topicId = generateId(topic.topic);
+
 					payloads.push({
 						id: `${id}_${topicId}_${topic.fileHash}`,
 						file: topic.file,
 						fileType: 'image',
-						storagePath: `${baseStoragePath}/${id}/${topic.imageId}`,
+						storagePath: `${baseStoragePath}/${id}/${topic.imageId}.webp`,
 						batchId
 					});
 				}
 			});
 
 			if (payloads.length > 0) {
+				setInvalidationKey([...mythFactKeys.all]);
 				useUploadStore.getState().enqueueUploads(payloads);
 			}
 
@@ -135,7 +147,7 @@ export function useUpdateMythFact() {
 				displayImage: { fileHash: data.displayImage.fileHash },
 				baseImagePath: data.baseImagePath,
 				videoGuide: { fileHash: data.videoGuide.fileHash },
-				topics: data.topics.map((t) => ({
+				topics: topics.map((t) => ({
 					id: generateId(t.topic),
 					topic: t.topic,
 					fact: t.fact,

@@ -1,9 +1,10 @@
+import type { User } from '@/types/user';
 import { auth } from './firebase';
 
 // Eto ung base url for dev environment
 export const API_BASE_URL = import.meta.env.DEV
-	? 'http://127.0.0.1:5001/beauwise-1687a/us-central1/admin'
-	: 'https://us-central1-beauwise-1687a.cloudfunctions.net/admin';
+	? 'http://127.0.0.1:5001/beauwise-1687a/asia-east2/admin'
+	: 'https://asia-east2-beauwise-1687a.cloudfunctions.net/admin';
 
 export const getUsers =
 	(maxPage: number, nextPageToken?: string | null, pageCount?: number) => async () => {
@@ -36,14 +37,22 @@ export const getUsers =
 	};
 
 export const updateUserStatus = async function ({
-	userId,
+	user,
 	status
 }: {
-	userId: string;
+	user: User;
 	status: string;
 }) {
+	const userId = user.id;
+	const isUpdatingUserAdmin =
+		user.account_access.role === 'admin' || user.account_access.role === 'superadmin';
+
+	const url = !isUpdatingUserAdmin
+		? `${API_BASE_URL}/users/${userId}/status`
+		: `${API_BASE_URL}/users/admin/${userId}/status`;
+
 	const token = await auth.currentUser?.getIdToken();
-	const respone = await fetch(`${API_BASE_URL}/users/${userId}/status`, {
+	const response = await fetch(url, {
 		method: 'PATCH',
 		headers: {
 			Authorization: `Bearer ${token}`,
@@ -52,19 +61,71 @@ export const updateUserStatus = async function ({
 		body: JSON.stringify({ updatedItem: status.replaceAll(' ', '_').toUpperCase() })
 	});
 
-	return respone.ok;
+	const result = await response.json();
+
+	if (!response.ok) {
+		throw new Error(`${result.message}`);
+	}
+
+	return result;
 };
 
-export const deleteUser = async function ({ userId }: { userId: string }) {
+export const deleteUser = async function ({
+	userId,
+	role
+}: {
+	userId: string;
+	role: string;
+}) {
 	const token = await auth.currentUser?.getIdToken();
-	const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+	const url =
+		role === 'basic'
+			? `${API_BASE_URL}/users/${userId}`
+			: `${API_BASE_URL}/users/admin/${userId}`;
+
+	const response = await fetch(url, {
 		method: 'DELETE',
 		headers: {
 			Authorization: `Bearer ${token}`
 		}
 	});
 
+	const result = await response.json();
+
+	if (!response.ok) {
+		throw new Error(`${result.message}`);
+	}
+
 	return response.ok;
+};
+
+export const addUser = async function ({
+	email,
+	password,
+	role
+}: {
+	email: string;
+	password: string;
+	role: string;
+}) {
+	const token = await auth.currentUser?.getIdToken();
+	const url = role === 'basic' ? `${API_BASE_URL}/users` : `${API_BASE_URL}/users/admin`;
+	const response = await fetch(url, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ newItem: { email, password } })
+	});
+
+	const result = await response.json();
+
+	if (!response.ok) {
+		throw new Error(result.message);
+	}
+
+	return result;
 };
 
 export const resetUserPassword = async function ({
@@ -75,7 +136,7 @@ export const resetUserPassword = async function ({
 	status: boolean;
 }) {
 	const token = await auth.currentUser?.getIdToken();
-	const respone = await fetch(`${API_BASE_URL}/users/${userId}/reset`, {
+	const response = await fetch(`${API_BASE_URL}/users/${userId}/reset`, {
 		method: 'PATCH',
 		headers: {
 			Authorization: `Bearer ${token}`,
@@ -84,5 +145,5 @@ export const resetUserPassword = async function ({
 		body: JSON.stringify({ updatedItem: status })
 	});
 
-	return respone.ok;
+	return response.ok;
 };

@@ -15,7 +15,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
 import { PhotoProvider } from 'react-photo-view';
 import { auth } from './lib/firebase';
-const queryClient = new QueryClient();
+import { queryClient } from './lib/query-client';
 
 export const links: Route.LinksFunction = () => [
 	{ rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -55,7 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 							<TooltipProvider>{children}</TooltipProvider>
 						</SidebarProvider>
 						<ScrollRestoration />
-						<Toaster visibleToasts={5} expand={true} />
+						<Toaster visibleToasts={2} />
 					</PhotoProvider>
 				</QueryClientProvider>
 				<Scripts />

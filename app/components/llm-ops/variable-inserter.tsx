@@ -113,7 +113,7 @@ export function VariableInserter({
 					</Badge>
 				</div>
 
-				<ScrollArea className='max-h-[360px] overflow-hidden p-4'>
+				<div className='max-h-[360px] overflow-y-auto overflow-hidden p-4'>
 					<div className='space-y-4'>
 						{categories.map(([categoryName, vars]) => (
 							<div key={categoryName} className='space-y-1.5'>
@@ -169,7 +169,7 @@ export function VariableInserter({
 							</div>
 						))}
 					</div>
-				</ScrollArea>
+				</div>
 			</PopoverContent>
 		</Popover>
 	);
