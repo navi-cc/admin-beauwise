@@ -11,6 +11,7 @@ import {
 	SidebarFooter,
 	SidebarHeader,
 	SidebarMenu,
+	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
 	useSidebar
@@ -25,6 +26,8 @@ import Books from '@/components/icons/books';
 import { auth } from '@/lib/firebase';
 import Logo from './icons/logo';
 import { Link } from 'react-router';
+import { Button } from './ui/button';
+import ModifiedLayoutAlign from './icons/modified-layout-align';
 
 const data = {
 	user: {
@@ -73,35 +76,44 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { setOpen, open } = useSidebar();
 
+	const [anchorOpen, setAnchorOpen] = React.useState(false);
+
 	return (
-		<Sidebar
-			onMouseEnter={() => setOpen(true)}
-			onMouseLeave={() => setOpen(false)}
-			collapsible='icon'
-			{...props}
-		>
-			<SidebarHeader>
-				<SidebarMenu>
-					<SidebarMenuItem className='flex items-center pt-2'>
-						<Link to={'https://beauwise.tech'} />
-						<Logo
-							className={`aspect-square size-8 shrink-0 hover:cursor-pointer ${open ? 'ml-1.5 mr-1' : ''} transition-all duration-80`}
-						/>
-						<div
-							className={`grid flex-1 text-left pl-1.5 text-sm leading-tight ${open ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-						>
-							<span className='truncate text-sidebar-foreground'>BeauWise</span>
-							<span className={`truncate text-xs font-extralight`}>Managment System</span>
-						</div>
-					</SidebarMenuItem>
-				</SidebarMenu>
-			</SidebarHeader>
-			<SidebarContent>
-				<NavMain items={data.navMain} />
-			</SidebarContent>
-			<SidebarFooter>
-				<NavUser user={data.user} />
-			</SidebarFooter>
-		</Sidebar>
+		<>
+			<Sidebar
+				// onMouseEnter={() => setOpen(true)}
+				// onMouseLeave={() => setOpen(false)}
+				collapsible='icon'
+				{...props}
+			>
+				<SidebarHeader>
+					<SidebarMenu>
+						<SidebarMenuItem className='flex items-center pt-2'>
+							<Link to={'https://beauwise.tech'}>
+								<Logo
+									className={`aspect-square size-8 shrink-0 hover:cursor-pointer ${open ? 'ml-1.5 mr-1' : ''} transition-all duration-80`}
+								/>
+							</Link>
+
+							<div
+								className={`grid flex-1 text-left pl-1.5 text-sm leading-tight ${open ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+							>
+								<span className='truncate text-sidebar-foreground'>BeauWise</span>
+								<span className={`truncate text-xs font-extralight`}>
+									Managment System
+								</span>
+							</div>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarHeader>
+				<SidebarRail />
+				<SidebarContent>
+					<NavMain items={data.navMain} />
+				</SidebarContent>
+				<SidebarFooter>
+					<NavUser user={data.user} />
+				</SidebarFooter>
+			</Sidebar>
+		</>
 	);
 }

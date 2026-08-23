@@ -70,6 +70,35 @@ export const updateUserStatus = async function ({
 	return result;
 };
 
+export const updateUserRole = async function ({
+	user,
+	role
+}: {
+	user: User;
+	role: string;
+}) {
+	const userId = user.id;
+	const url = `${API_BASE_URL}/users/${userId}/role`;
+
+	const token = await auth.currentUser?.getIdToken();
+	const response = await fetch(url, {
+		method: 'PATCH',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ updatedItem: role })
+	});
+
+	const result = await response.json();
+
+	if (!response.ok) {
+		throw new Error(`${result.message}`);
+	}
+
+	return result;
+};
+
 export const deleteUser = async function ({
 	userId,
 	role

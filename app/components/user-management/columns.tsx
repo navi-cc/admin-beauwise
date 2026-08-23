@@ -19,6 +19,13 @@ import UserIcon from '../icons/user';
 import { auth } from '@/lib/firebase';
 import Lock from '../icons/lock';
 import { useAuthStore } from '@/store/useAuthStore';
+import { Mail } from '../icons/mail';
+import AccountRecovery from '../icons/account-recovery';
+import UserRoundCog from '../icons/user-round-cog';
+import MailAccount02 from '../icons/mail-account-02';
+import UserRoundKey from '../icons/user-round-key';
+import PasswordReset from '../icons/password-reset';
+import UserRemove from '../icons/user-remove';
 
 interface ColumnActions {
 	onResetPassword: (user: User) => void;
@@ -26,6 +33,7 @@ interface ColumnActions {
 	onCancelDeletion: (user: User) => void;
 	onDisableUser: (user: User) => void;
 	onDeleteUser: (user: User) => void;
+	onChangeRole: (user: User) => void;
 }
 
 function getUserStatus(status: string) {}
@@ -33,10 +41,10 @@ function getUserStatus(status: string) {}
 export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 	return [
 		{
-			accessorKey: 'email',
-			header: ({ column }) => (
+			accessorKey: 'user_name',
+			header: () => (
 				<div className='flex items-center gap-x-1.5'>
-					<UserIcon className='size-4' /> User
+					<UserIcon className='size-4' /> Username
 				</div>
 			),
 			cell: ({ row }) => {
@@ -56,7 +64,31 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 		},
 
 		{
-			header: 'Privileges',
+			accessorKey: 'email',
+			header: () => {
+				return (
+					<div className='flex items-center gap-x-1.5'>
+						<MailAccount02 className='size-4' /> Email
+					</div>
+				);
+			},
+			cell: ({ row }) => {
+				const user = row.original;
+
+				return <div className='flex items-center gap-x-1.5'>{user.email}</div>;
+			}
+		},
+
+		{
+			accessorKey: 'account_access.role',
+			id: 'role',
+			header: () => {
+				return (
+					<div className='flex items-center gap-x-1.5'>
+						<UserRoundKey className='size-4' /> Privileges
+					</div>
+				);
+			},
 			cell: ({ row }) => {
 				const user = row.original;
 
@@ -172,8 +204,11 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 								<DropdownMenuSeparator />
 								{!isOAuthUser && (
 									<>
-										<DropdownMenuItem onClick={() => actions.onResetPassword(user)}>
-											Reset Password
+										<DropdownMenuItem
+											className=' duration-300'
+											onClick={() => actions.onResetPassword(user)}
+										>
+											<PasswordReset /> Reset Password
 										</DropdownMenuItem>
 									</>
 								)}
@@ -181,7 +216,7 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 									<>
 										<DropdownMenuItem
 											onClick={() => actions.onCancelDeletion(user)}
-											className={isPendingDeletion ? '' : ''}
+											className={`${isPendingDeletion ? '' : ''} duration-300`}
 										>
 											Cancel Deletion
 										</DropdownMenuItem>
@@ -189,16 +224,25 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 								)}
 
 								<DropdownMenuItem
-									onClick={() => actions.onDisableUser(user)}
-									className={isDisabled ? '' : ''}
+									onClick={() => actions.onChangeRole(user)}
+									className='duration-300'
 								>
-									{isDisabled ? 'Enable User' : 'Disable User'}
+									<AccountRecovery />
+									Change Role
+								</DropdownMenuItem>
+
+								<DropdownMenuItem
+									onClick={() => actions.onDisableUser(user)}
+									className={`duration-300`}
+								>
+									<UserRoundCog /> {isDisabled ? 'Enable User' : 'Disable User'}
 								</DropdownMenuItem>
 
 								<DropdownMenuItem
 									onClick={() => actions.onDeleteUser(user)}
-									className='text-destructive focus:text-destructive'
+									className='text-destructive focus:text-destructive duration-300'
 								>
+									<UserRemove className='text-destructive focus:text-destructive' />
 									Delete User
 								</DropdownMenuItem>
 							</DropdownMenuGroup>

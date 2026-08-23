@@ -2,12 +2,21 @@ import BadgeAlert from '@/components/icons/badge-alert';
 import Check from '@/components/icons/check';
 import CheckMarkBadge from '@/components/icons/checkmark-badge';
 import UserMultipleIcon from '@/components/icons/user-multiple';
+import X from '@/components/icons/x';
+import { Button } from '@/components/ui/button';
 import { UserManagementTable } from '@/components/user-management/user-table';
-import { addUser as addNewUser, deleteUser, getUsers, updateUserStatus } from '@/lib/api';
+import {
+	addUser as addNewUser,
+	deleteUser,
+	getUsers,
+	updateUserRole,
+	updateUserStatus
+} from '@/lib/api';
 import { auth } from '@/lib/firebase';
 import type {
 	AddUserPayload,
 	CancelDeletionPayload,
+	ChangeRolePayload,
 	DeleteUserPayload,
 	DisableUserPayload,
 	User
@@ -96,6 +105,13 @@ export default function UserManagement() {
 		}
 	});
 
+	const accountRoleChange = useMutation({
+		mutationFn: updateUserRole,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['users'] });
+		}
+	});
+
 	const addUser = useMutation({
 		mutationFn: addNewUser,
 		onSuccess: () => {
@@ -113,9 +129,9 @@ export default function UserManagement() {
 	const onResetPassword = async (user: User) => {
 		const currentSignedInClaims = (await auth.currentUser?.getIdTokenResult())?.claims;
 		const isAllowed =
-			(currentSignedInClaims?.role === 'admin' ||
-				currentSignedInClaims?.role === 'superadmin') &&
-			user.account_access.role === 'basic';
+			currentSignedInClaims?.role === 'superadmin' ||
+			(currentSignedInClaims?.role === 'admin' && user.id === auth.currentUser?.uid) ||
+			(currentSignedInClaims?.role === 'admin' && user.account_access.role === 'basic');
 
 		try {
 			if (isAllowed) {
@@ -125,7 +141,13 @@ export default function UserManagement() {
 					description: `The reset password link is successfully sent to ${user.email}.`,
 					descriptionClassName: 'text-red',
 					duration: 12000,
-					icon: <CheckMarkBadge className='text-green-500 size-5' />
+					icon: <CheckMarkBadge className='text-green-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
 				});
 			} else {
 				throw new Error('Requested action is not allowed. Please try again');
@@ -141,7 +163,11 @@ export default function UserManagement() {
 				description: message,
 				position: 'top-right',
 				duration: 12000,
-				icon: <BadgeAlert className='text-red-500 size-5' />
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
 			});
 		}
 	};
@@ -155,7 +181,13 @@ export default function UserManagement() {
 					description: `The ${data.user.email} account deletion is successfully cancelled.`,
 					descriptionClassName: 'text-red',
 					duration: 12000,
-					icon: <CheckMarkBadge className='text-green-500 size-5' />
+					icon: <CheckMarkBadge className='text-green-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
 				});
 			},
 
@@ -170,7 +202,53 @@ export default function UserManagement() {
 					description: message,
 					position: 'top-right',
 					duration: 12000,
-					icon: <BadgeAlert className='text-red-500 size-5' />
+					icon: <BadgeAlert className='text-red-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
+				});
+			}
+		});
+	};
+
+	const onChangeUserRole = (data: ChangeRolePayload) => {
+		accountRoleChange.mutate(data, {
+			onSuccess: () => {
+				toast.success(`User Role Updated`, {
+					position: 'top-right',
+					description: `The ${data.user.email} account role have been updated to ${data.role}`,
+					duration: 12000,
+					icon: <CheckMarkBadge className='text-green-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
+				});
+			},
+
+			onError: (err) => {
+				let message = 'Something went wrong. Please try again.';
+
+				if (err?.message) {
+					message = err.message;
+				}
+
+				toast.error('Account Role Update Failed', {
+					description: message,
+					position: 'top-right',
+					duration: 12000,
+					icon: <BadgeAlert className='text-red-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
 				});
 			}
 		});
@@ -190,7 +268,13 @@ export default function UserManagement() {
 					description: `${data.user?.user_name ? data.user.user_name : data.user.email} status has been updated to ${data.status}`,
 					descriptionClassName: 'text-red',
 					duration: 20000,
-					icon: <CheckMarkBadge className='text-green-500 size-5' />
+					icon: <CheckMarkBadge className='text-green-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
 				});
 			},
 			onError: (err) => {
@@ -200,9 +284,17 @@ export default function UserManagement() {
 					message = err.message;
 				}
 
-				toast.error(message, {
+				toast.error('User Disable Action Failed', {
+					description: message,
 					position: 'top-right',
-					duration: 12000
+					duration: 12000,
+					icon: <BadgeAlert className='text-red-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
 				});
 			}
 		});
@@ -213,13 +305,19 @@ export default function UserManagement() {
 			{ userId: payload.user.id, role: payload.user.account_access.role },
 			{
 				onSuccess: () => {
-					toast.success(
-						`${payload.user.user_name ? payload.user.user_name : payload.user.email} is successfully deleted.`,
-						{
-							position: 'top-right',
-							duration: 12000
+					toast.success('User Successfully Deleted', {
+						position: 'top-right',
+						description: `${payload.user.user_name ? payload.user.user_name : payload.user.email} is successfully deleted.`,
+						descriptionClassName: 'text-red',
+						duration: 20000,
+						icon: <CheckMarkBadge className='text-green-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
 						}
-					);
+					});
 				},
 
 				onError: (err) => {
@@ -229,9 +327,17 @@ export default function UserManagement() {
 						message = err.message;
 					}
 
-					toast.error(message, {
+					toast.error('User Delete Action Failed', {
+						description: message,
 						position: 'top-right',
-						duration: 12000
+						duration: 12000,
+						icon: <BadgeAlert className='text-red-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
 					});
 				}
 			}
@@ -247,9 +353,18 @@ export default function UserManagement() {
 						throw new Error(`${payload.email} is not created. Please try again`);
 					}
 
-					toast.success(`${payload.email} is successfully created.`, {
+					toast.success('User Successfully Created', {
 						position: 'top-right',
-						duration: 12000
+						description: `${payload.email} is successfully created.`,
+						descriptionClassName: 'text-red',
+						duration: 20000,
+						icon: <CheckMarkBadge className='text-green-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
 					});
 				},
 				onError: (err) => {
@@ -259,9 +374,17 @@ export default function UserManagement() {
 						message = err.message;
 					}
 
-					toast.error(message, {
+					toast.error('User Add Action Failed', {
+						description: message,
 						position: 'top-right',
-						duration: 12000
+						duration: 12000,
+						icon: <BadgeAlert className='text-red-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
 					});
 				}
 			}
@@ -303,6 +426,7 @@ export default function UserManagement() {
 				onResetPassword={onResetPassword}
 				onDisableUser={onDisableUser}
 				onAddUser={onAddUser}
+				onChangeRole={onChangeUserRole}
 			/>
 		</div>
 	);

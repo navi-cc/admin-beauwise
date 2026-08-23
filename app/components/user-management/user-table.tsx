@@ -31,7 +31,7 @@ interface UserManagementTableProps {
 	users: User[];
 
 	onResetPassword: (payload: User) => void;
-
+	onChangeRole: (payload: ChangeRolePayload) => void;
 	onCancelDeletion: (payload: CancelDeletionPayload) => void;
 	onDisableUser: (payload: DisableUserPayload) => void;
 	onDeleteUser: (payload: DeleteUserPayload) => void;
@@ -53,7 +53,7 @@ export function UserManagementTable({
 	pageIndex,
 	pageSize,
 	onPaginationChange,
-
+	onChangeRole,
 	onCancelDeletion,
 	onDisableUser,
 	onAddUser,
@@ -67,6 +67,8 @@ export function UserManagementTable({
 	const [selectedUser, setSelectedUser] = useState<User | null>(null);
 	const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 	const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+
+	const [roleDialogOpen, setRoleDialogOpen] = useState(false);
 	const [cancelDeletionDialogOpen, setCancelDeletionDialogOpen] = useState(false);
 	const [disableDialogOpen, setDisableDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -93,6 +95,10 @@ export function UserManagementTable({
 				onDeleteUser: (user) => {
 					setSelectedUser(user);
 					setDeleteDialogOpen(true);
+				},
+				onChangeRole: (user) => {
+					setSelectedUser(user);
+					setRoleDialogOpen(true);
 				}
 			}),
 		[]
@@ -115,41 +121,41 @@ export function UserManagementTable({
 				searchKey='email'
 				searchPlaceholder='Filter by email...'
 			/>
-
 			<ResetPasswordDialog
 				user={selectedUser as User}
 				open={passwordDialogOpen}
 				onOpenChange={setPasswordDialogOpen}
 				onSubmit={onResetPassword}
 			/>
-
 			{/* <ChangeEmailDialog
 				user={selectedUser}
 				open={emailDialogOpen}
 				onOpenChange={setEmailDialogOpen}
 				onSubmit={onChangeEmail}
 			/> */}
-
 			<CancelDeletionDialog
 				user={selectedUser}
 				open={cancelDeletionDialogOpen}
 				onOpenChange={setCancelDeletionDialogOpen}
 				onConfirm={onCancelDeletion}
 			/>
-
+			<ChangeRoleDialog
+				user={selectedUser}
+				open={roleDialogOpen}
+				onOpenChange={setRoleDialogOpen}
+				onConfirm={onChangeRole}
+			/>
 			<DisableUserDialog
 				user={selectedUser}
 				open={disableDialogOpen}
 				onOpenChange={setDisableDialogOpen}
 				onConfirm={onDisableUser}
 			/>
-
 			<AddUserDialog
 				open={addDialogOpen}
 				onOpenChange={setAddDialogOpen}
 				onConfirm={onAddUser}
 			/>
-
 			<DeleteUserDialog
 				user={selectedUser}
 				open={deleteDialogOpen}

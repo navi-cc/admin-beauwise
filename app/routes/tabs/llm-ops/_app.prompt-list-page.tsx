@@ -14,6 +14,7 @@ import Alert from '@/components/icons/alert';
 import RefreshCw from '@/components/icons/refresh-cw';
 import Refresh from '@/components/icons/refresh';
 import AiNetworkIcon from '@/components/icons/ai-network';
+import FileEmpty from '@/components/icons/file-empty';
 
 const getTime = (t: any) => t?.toDate?.()?.getTime?.() ?? 0;
 
@@ -87,6 +88,10 @@ export default function PromptListPage() {
 		navigate(`/llm-ops/create?duplicate=${prompt.id}`, { viewTransition: true });
 	};
 
+	const retry = () => {
+		refetch({ throwOnError: true });
+	};
+
 	return (
 		<div className='space-y-2 p-2'>
 			<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
@@ -97,36 +102,29 @@ export default function PromptListPage() {
 					</div>
 
 					<p className='text-muted-foreground text-sm'>
-						Manage, version, and evaluate your LLM system prompt templates.
+						Manage, version system prompt templates.
 					</p>
 				</div>
 			</div>
 
 			<div className='flex flex-col gap-y-2'>
-				<Button
-					className='self-start'
-					onClick={() => navigate('/llm-ops/create', { viewTransition: true })}
-				>
-					<Plus className='mr-1 h-4 w-4' />
-					Create Prompt
-				</Button>
-				<PromptFiltersBar filters={filters} onChange={setFilters} />
-				<Button className='self-start' variant='outline' onClick={() => refetch()}>
-					<Refresh className='mr-2 h-4 w-4' />
-					Refresh
-				</Button>
+				<PromptFiltersBar filters={filters} retry={retry} onChange={setFilters} />
 			</div>
 
 			{isError || isRefetchError ? (
 				<div className='flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50'>
 					<Alert className='mx-auto h-12 w-12 text-destructive/50' />
-					<h3 className='mt-4 text-lg font-semibold'>Error loading prompts</h3>
-					<p className='mb-4 mt-2 text-sm text-muted-foreground'>
+					<h3 className='mt-2 text-lg font-normal'>Error loading prompts</h3>
+					<p className='text-sm text-muted-foreground'>
 						{error instanceof Error ? error.message : 'An unknown error occurred'}
 					</p>
-					<Button variant='outline' onClick={() => refetch({ throwOnError: true })}>
-						<RefreshCw className='mr-2 h-4 w-4' />
+					<Button
+						className='mt-2'
+						variant='outline'
+						onClick={() => refetch({ throwOnError: true })}
+					>
 						Try again
+						<RefreshCw className='size-4' />
 					</Button>
 				</div>
 			) : isFetching ? (
@@ -143,16 +141,16 @@ export default function PromptListPage() {
 				</div>
 			) : filteredAndSortedPrompts.length === 0 ? (
 				<div className='flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50'>
-					<SearchX className='mx-auto h-12 w-12 text-muted-foreground/50' />
-					<h3 className='mt-4 text-lg font-semibold'>No prompts found</h3>
-					<p className='mt-2 text-sm text-muted-foreground'>
+					<FileEmpty className='mx-auto size-12 text-muted-foreground/50' />
+					<h3 className='mt-2 text-lg font-normal'>No prompts found</h3>
+					<p className='text-sm text-muted-foreground'>
 						{prompts.length === 0
-							? 'Get started by creating your first system prompt.'
+							? 'Get started by clicking the add button.'
 							: 'Try adjusting your search or filters to find prompts.'}
 					</p>
 					{prompts.length === 0 && (
 						<Button
-							className='mt-6'
+							className='mt-2'
 							onClick={() => navigate('/llm-ops/create', { viewTransition: true })}
 						>
 							<Plus className='mr-2 h-4 w-4' />

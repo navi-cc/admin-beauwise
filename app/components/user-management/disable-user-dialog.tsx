@@ -53,15 +53,7 @@ export function DisableUserDialog({
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel>Cancel</AlertDialogCancel>
-					<AlertDialogAction
-						onClick={handleConfirm}
-						style={{ color: '#fff' }}
-						className={
-							isCurrentlyDisabled
-								? ''
-								: 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-						}
-					>
+					<AlertDialogAction onClick={handleConfirm} style={{ color: '#fff' }}>
 						{isCurrentlyDisabled ? 'Enable User' : 'Disable User'}
 					</AlertDialogAction>
 				</AlertDialogFooter>

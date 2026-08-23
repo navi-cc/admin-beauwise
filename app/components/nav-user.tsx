@@ -24,7 +24,7 @@ import {
 } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import User from './icons/user';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useState } from 'react';
 import {
 	AlertDialog,
@@ -40,6 +40,10 @@ import { signOut } from 'firebase/auth';
 import { redirect, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import ChevronsLeftRight from './icons/chevrons-left-right';
+import Logout from './icons/logout';
+import { doc, setDoc } from 'firebase/firestore';
+import BadgeAlert from './icons/badge-alert';
+import X from './icons/x';
 
 export function NavUser({
 	user
@@ -52,15 +56,37 @@ export function NavUser({
 	const navigate = useNavigate();
 	const { isMobile } = useSidebar();
 	const [visible, setVisible] = useState(false);
-
+	const [disable, setDisable] = useState(false);
 	const handleConfirmLogout = async () => {
-		setVisible(false);
-
 		try {
+			setDisable(true);
+			if (auth.currentUser) {
+				const userDocRef = doc(db, 'users', auth.currentUser.uid);
+				await setDoc(
+					userDocRef,
+					{
+						currentSessionId: ''
+					},
+					{ merge: true }
+				);
+			}
+
 			await signOut(auth);
 			navigate('/sign-in', { replace: true });
+			setVisible(false);
 		} catch {
-			toast.error('Logout failed. Please try again');
+			toast.error('Logout Failed', {
+				description: 'Something went wrong. Please try again.',
+				position: 'top-right',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
+		} finally {
+			setDisable(false);
 		}
 	};
 	return (
@@ -109,8 +135,8 @@ export function NavUser({
 							<DropdownMenuSeparator />
 
 							<DropdownMenuItem onClick={() => setVisible(true)}>
-								<SignOutIcon />
-								Log out
+								<Logout className='size-4' />
+								Sign Out
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
@@ -120,15 +146,18 @@ export function NavUser({
 			<AlertDialog open={visible} onOpenChange={setVisible}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
-						{/* <AlertDialogDescription>
-							This action cannot be undone. This will permanently delete your account from
-							our servers.
-						</AlertDialogDescription> */}
+						<AlertDialogTitle className='flex gap-1'>
+							<span className=''>Sign Out</span> <Logout className='size-5' />
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to sign out of your account?
+						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>No</AlertDialogCancel>
-						<AlertDialogAction onClick={handleConfirmLogout}>Yes</AlertDialogAction>
+						<AlertDialogCancel>Cancel (Keep me signed in)</AlertDialogCancel>
+						<AlertDialogAction disabled={disable} onClick={handleConfirmLogout}>
+							Sign Out
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>

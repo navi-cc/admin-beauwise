@@ -1,6 +1,6 @@
 export type UserStatus = 'ACTIVE' | 'DISABLED' | 'PENDING_DELETION';
 
-type Roles = 'admin' | 'superadmin' | 'basic';
+export type Roles = 'admin' | 'superadmin' | 'basic';
 
 // const permissions = [
 // 	'read:documents',
@@ -61,8 +61,8 @@ export interface AddUserPayload {
 }
 
 export interface ChangeRolePayload {
-	userId: string;
-	newRole: Roles;
+	user: User;
+	role: Roles;
 }
 export interface ForceLogoutPayload {
 	userId: string;

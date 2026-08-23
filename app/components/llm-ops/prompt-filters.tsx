@@ -20,17 +20,26 @@ import type { PromptFilters, PromptType } from '@/types/llm-ops';
 import Search from '../icons/search';
 import X from '../icons/x';
 import SlidersHorizontal from '../icons/sliders-horizontal';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import ChevronDown from '../icons/chevron-down';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '../ui/input-group';
+import Refresh from '../icons/refresh';
+import Plus from '../icons/plus';
+import { useNavigate } from 'react-router';
 
 interface PromptFiltersBarProps {
 	filters: PromptFilters;
 	onChange: (filters: PromptFilters) => void;
+	retry: () => void;
 }
 
 /**
  * Filter bar for the prompt list page with search, prompt type, status,
  * model, environment tag filters, and sort options.
  */
-export function PromptFiltersBar({ filters, onChange }: PromptFiltersBarProps) {
+export function PromptFiltersBar({ filters, onChange, retry }: PromptFiltersBarProps) {
+	const navigate = useNavigate();
+
 	const hasActiveFilters =
 		filters.search ||
 		filters.promptType !== 'all' ||
@@ -64,75 +73,101 @@ export function PromptFiltersBar({ filters, onChange }: PromptFiltersBarProps) {
 	};
 
 	return (
-		<div className='space-y-3'>
-			{/* Top row: search + sort */}
-			<div className='flex items-center gap-3'>
-				{/* Search */}
-				<div className='relative flex-1'>
-					<Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
-					<Input
+		<div className='space-y-1.5'>
+			<div className='flex items-center gap-1.5'>
+				<InputGroup className='max-w-80'>
+					<InputGroupAddon>
+						<Search className='size-4 text-muted-foreground' />
+					</InputGroupAddon>
+					<InputGroupInput
 						value={filters.search}
 						onChange={(e) => updateFilter('search', e.target.value)}
-						placeholder='Search prompts by name or description...'
-						className='pl-9 h-9'
+						placeholder='Search prompts by name...'
 					/>
-					{filters.search && (
-						<button
-							type='button'
-							onClick={() => updateFilter('search', '')}
-							className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground'
-						>
-							<X className='h-3.5 w-3.5' />
-						</button>
-					)}
-				</div>
+				</InputGroup>
 
-				{/* Sort */}
-				<Select
-					value={filters.sortBy}
-					onValueChange={(v) => updateFilter('sortBy', v as PromptFilters['sortBy'])}
+				<Button
+					className='self-start'
+					onClick={() => navigate('/llm-ops/create', { viewTransition: true })}
 				>
-					<SelectTrigger className='w-40 h-9 text-xs'>
-						<SelectValue placeholder='Sort by' />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value='newest'>Newest First</SelectItem>
-						<SelectItem value='oldest'>Oldest First</SelectItem>
-						<SelectItem value='name_asc'>Name A–Z</SelectItem>
-						<SelectItem value='name_desc'>Name Z–A</SelectItem>
-					</SelectContent>
-				</Select>
+					<Plus className='mr-1 h-4 w-4' />
+					Create Prompt
+				</Button>
 			</div>
 
-			{/* Filter row */}
-			<div className='flex items-center gap-3 flex-wrap'>
-				<div className='flex items-center gap-1.5 text-xs text-muted-foreground'>
-					<SlidersHorizontal className='h-3.5 w-3.5' />
-					<span>Filters:</span>
-				</div>
+			<div className='flex items-center gap-1.5 flex-wrap'>
+				<Popover>
+					<PopoverTrigger
+						render={
+							<Button variant='outline' className='font-light'>
+								<span className='font-normal capitalize'>{filters.sortBy}</span>{' '}
+								<ChevronDown />
+							</Button>
+						}
+					/>
+					<PopoverContent align='center' className='w-20'>
+						{['newest', 'oldest'].map((val) => {
+							return (
+								<Button
+									onClick={() => {
+										updateFilter('sortBy', val as PromptFilters['sortBy']);
+									}}
+									variant='ghost'
+									className={`capitalize font-light transition-colors duration-300 ${val === filters.sortBy ? 'bg-muted' : 'bg-transparent'}`}
+								>
+									{val}
+								</Button>
+							);
+						})}
+					</PopoverContent>
+				</Popover>
 
-				{/* Prompt Type Filter */}
-				<Select
-					value={filters.promptType || 'all'}
-					onValueChange={(v) =>
-						updateFilter('promptType', v as PromptFilters['promptType'])
-					}
-				>
-					<SelectTrigger className='w-44 h-7 text-xs font-medium'>
-						<SelectValue placeholder='All Prompt Types' />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value='all'>All Prompt Types</SelectItem>
-						{Object.values(PROMPT_TYPES).map((type) => (
-							<SelectItem key={type.id} value={type.id}>
-								{type.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+				<Popover>
+					<PopoverTrigger
+						render={
+							<Button variant='outline' className='font-light'>
+								Prompt:{' '}
+								<span className='font-normal capitalize'>
+									{filters.promptType
+										.split('_')
+										.map((val) => val[0].toUpperCase() + val.slice(1))
+										.join(' ')}
+								</span>{' '}
+								<ChevronDown />
+							</Button>
+						}
+					/>
+					<PopoverContent align='start' className='w-50'>
+						<Button
+							key={'all'}
+							onClick={() => {
+								updateFilter('promptType', 'all' as PromptFilters['promptType']);
+							}}
+							variant='ghost'
+							className={`capitalize font-light transition-colors duration-300 ${'all' === filters.promptType ? 'bg-muted' : 'bg-transparent'}`}
+						>
+							All
+						</Button>
+
+						{Object.values(PROMPT_TYPES).map((type) => {
+							return (
+								<Button
+									key={type.id}
+									onClick={() => {
+										updateFilter('promptType', type.id as PromptFilters['promptType']);
+									}}
+									variant='ghost'
+									className={`capitalize font-light transition-colors duration-300 ${type.id === filters.promptType ? 'bg-muted' : 'bg-transparent'}`}
+								>
+									{type.label}
+								</Button>
+							);
+						})}
+					</PopoverContent>
+				</Popover>
 
 				{/* Status filter */}
-				<Select
+				{/* <Select
 					value={filters.status}
 					onValueChange={(v) => updateFilter('status', v as PromptFilters['status'])}
 				>
@@ -147,10 +182,58 @@ export function PromptFiltersBar({ filters, onChange }: PromptFiltersBarProps) {
 							</SelectItem>
 						))}
 					</SelectContent>
-				</Select>
+				</Select> */}
+				<Popover>
+					<PopoverTrigger
+						render={
+							<Button variant='outline' className='font-light'>
+								Models:{' '}
+								<span className='font-normal capitalize'>
+									{filters.model
+										.split('_')
+										.map((val) => val[0].toUpperCase() + val.slice(1))
+										.join(' ')
+										.split('-')
+										.join(' ')}
+								</span>{' '}
+								<ChevronDown />
+							</Button>
+						}
+					/>
+					<PopoverContent align='start' className='w-50'>
+						<Button
+							key={'all'}
+							onClick={() => {
+								updateFilter('model', 'all' as PromptFilters['model']);
+							}}
+							variant='ghost'
+							className={`capitalize font-light transition-colors duration-300 ${'all' === filters.model ? 'bg-muted' : 'bg-transparent'}`}
+						>
+							All Models
+						</Button>
 
-				{/* Model filter */}
-				<Select value={filters.model} onValueChange={(v) => updateFilter('model', v)}>
+						{GEMINI_MODELS.map((model) => {
+							return (
+								<Button
+									key={model.id}
+									onClick={() => {
+										updateFilter('model', model.id as PromptFilters['model']);
+									}}
+									variant='ghost'
+									className={`capitalize font-light transition-colors duration-300 ${model.id === filters.model ? 'bg-muted' : 'bg-transparent'}`}
+								>
+									{model.name}
+								</Button>
+							);
+						})}
+					</PopoverContent>
+				</Popover>
+
+				<Button variant='outline' className='font-light self-start' onClick={retry}>
+					Refresh <Refresh />
+				</Button>
+
+				{/* <Select value={filters.model} onValueChange={(v) => updateFilter('model', v)}>
 					<SelectTrigger className='w-36 h-7 text-xs'>
 						<SelectValue placeholder='Model' />
 					</SelectTrigger>
@@ -162,10 +245,10 @@ export function PromptFiltersBar({ filters, onChange }: PromptFiltersBarProps) {
 							</SelectItem>
 						))}
 					</SelectContent>
-				</Select>
+				</Select> */}
 
 				{/* Tag chips */}
-				<div className='flex items-center gap-1.5'>
+				{/* <div className='flex items-center gap-1.5'>
 					{DEFAULT_TAGS.map((tag) => {
 						const isActive = filters.tags.includes(tag.value);
 						return (
@@ -181,7 +264,7 @@ export function PromptFiltersBar({ filters, onChange }: PromptFiltersBarProps) {
 							</Badge>
 						);
 					})}
-				</div>
+				</div> */}
 
 				{/* Clear filters */}
 				{hasActiveFilters && (

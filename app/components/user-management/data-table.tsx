@@ -31,6 +31,7 @@ import Refresh from '../icons/refresh';
 import ChevronRight from '../icons/chevron-right';
 import ChevronLeft from '../icons/chevron-left';
 import Plus from '../icons/plus';
+import UserAdd from '../icons/use-add';
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
@@ -65,6 +66,8 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+	const [selectedFilterRole, setSelectedFilterRole] = useState('');
+
 	const table = useReactTable({
 		data,
 		columns,
@@ -86,16 +89,22 @@ export function DataTable<TData, TValue>({
 		}
 	});
 	return (
-		<div className='space-y-4'>
-			<div className='flex flex-col items-start gap-1.5'>
-				<Input
-					placeholder={searchPlaceholder}
-					value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
-					onChange={(event) =>
-						table.getColumn(searchKey)?.setFilterValue(event.target.value)
-					}
-					className='max-w-sm'
-				/>
+		<div className='space-y-1.5'>
+			<div className='flex flex-col items-start gap-y-1.5'>
+				<div className='flex gap-x-1.5'>
+					<Input
+						placeholder={searchPlaceholder}
+						value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
+						onChange={(event) =>
+							table.getColumn(searchKey)?.setFilterValue(event.target.value)
+						}
+						className='w-70'
+					/>
+
+					<Button className='font-light' onClick={() => onOpenAddDialog(true)}>
+						Add User <UserAdd />
+					</Button>
+				</div>
 
 				<div className='flex gap-1.5'>
 					<Popover>
@@ -121,16 +130,41 @@ export function DataTable<TData, TValue>({
 						</PopoverContent>
 					</Popover>
 
+					<Popover>
+						<PopoverTrigger
+							render={
+								<Button variant='outline' className='font-light'>
+									Role:
+									<span className='font-normal capitalize'>
+										{(table.getColumn('role')?.getFilterValue() as string) ?? 'all'}
+									</span>
+									<ChevronDown />
+								</Button>
+							}
+						/>
+						<PopoverContent align='center' className='w-20'>
+							{['all', 'admin', 'basic'].map((role) => {
+								return (
+									<Button
+										onClick={() => {
+											if (role === 'all') {
+												table.getColumn('role')?.setFilterValue('');
+											} else {
+												table.getColumn('role')?.setFilterValue(role);
+											}
+										}}
+										className={`capitalize font-normal ${role === (table.getColumn('role')?.getFilterValue() as string) ? 'bg-muted' : 'bg-transparent'}`}
+										variant='ghost'
+									>
+										{role}
+									</Button>
+								);
+							})}
+						</PopoverContent>
+					</Popover>
+
 					<Button variant='outline' className='font-light' onClick={retry}>
 						Refresh <Refresh />
-					</Button>
-
-					<Button
-						variant='outline'
-						className='font-light'
-						onClick={() => onOpenAddDialog(true)}
-					>
-						Add User <Plus />
 					</Button>
 				</div>
 			</div>
@@ -151,19 +185,29 @@ export function DataTable<TData, TValue>({
 					</TableHeader>
 					<TableBody>
 						{isUserTableLoading ? (
-							Array.from({ length: 5 }).map((_, i) => (
+							Array.from({ length: 10 }).map((_, i) => (
 								<TableRow key={`skeleton-${i}`}>
 									<TableCell>
 										<div className='h-4 w-32 animate-pulse rounded bg-muted' />
 									</TableCell>
+
+									<TableCell className='hidden md:table-cell'>
+										<div className='h-4 w-48 animate-pulse rounded bg-muted' />
+									</TableCell>
 									<TableCell>
 										<div className='flex gap-1'>
 											<div className='h-5 w-16 animate-pulse rounded-full bg-muted' />
-											<div className='h-5 w-20 animate-pulse rounded-full bg-muted' />
 										</div>
 									</TableCell>
-									<TableCell className='hidden md:table-cell'>
-										<div className='h-4 w-48 animate-pulse rounded bg-muted' />
+									<TableCell>
+										<div className='flex gap-1'>
+											<div className='size-8 animate-pulse rounded-full bg-muted' />
+										</div>
+									</TableCell>
+									<TableCell>
+										<div className='flex gap-1'>
+											<div className='h-5 w-16 animate-pulse rounded-full bg-muted' />
+										</div>
 									</TableCell>
 									<TableCell className='hidden lg:table-cell'>
 										<div className='h-4 w-24 animate-pulse rounded bg-muted' />
@@ -175,7 +219,7 @@ export function DataTable<TData, TValue>({
 							))
 						) : isError || isRefetchError ? (
 							<TableRow>
-								<TableCell colSpan={5} className='h-48 text-center'>
+								<TableCell colSpan={7} className='h-48 text-center'>
 									<div className='flex flex-col items-center gap-2 text-muted-foreground'>
 										<AlertCircle className='h-10 w-10 opacity-80' />
 										<div>
@@ -201,7 +245,7 @@ export function DataTable<TData, TValue>({
 							</TableRow>
 						) : table.getRowModel().rows?.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={5} className='h-48 text-center'>
+								<TableCell colSpan={7} className='h-48 text-center'>
 									<div className='flex flex-col items-center gap-2 text-muted-foreground'>
 										No users found.
 									</div>
@@ -209,19 +253,8 @@ export function DataTable<TData, TValue>({
 							</TableRow>
 						) : (
 							table.getRowModel().rows.map((row) => {
-								const isAdmin = (row.original as User).account_access.roles === 'admin';
-
 								return (
-									<TableRow
-										key={row.id}
-										data-state={row.getIsSelected() && 'selected'}
-										aria-disabled={isAdmin}
-										className={
-											isAdmin
-												? 'opacity-80 select-none bg-muted/30 hover:cursor-not-allowed '
-												: ''
-										}
-									>
+									<TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
 										{row.getVisibleCells().map((cell) => (
 											<TableCell key={cell.id}>
 												{flexRender(cell.column.columnDef.cell, cell.getContext())}
