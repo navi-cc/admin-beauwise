@@ -37,6 +37,7 @@ interface UserManagementTableProps {
 	onDeleteUser: (payload: DeleteUserPayload) => void;
 	onAddUser: (payload: AddUserPayload) => void;
 	isUserTableLoading: boolean;
+	isUpdating: boolean;
 	isError: boolean;
 	isRefetchError: boolean;
 	retry: () => void;
@@ -61,6 +62,8 @@ export function UserManagementTable({
 	onPageSizeChange,
 	isUserTableLoading,
 	isError,
+
+	isUpdating,
 	isRefetchError,
 	retry
 }: UserManagementTableProps) {
@@ -75,32 +78,35 @@ export function UserManagementTable({
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	const columns = useMemo(
 		() =>
-			getUserColumns({
-				onResetPassword: (user) => {
-					setSelectedUser(user);
-					setPasswordDialogOpen(true);
+			getUserColumns(
+				{
+					onResetPassword: (user) => {
+						setSelectedUser(user);
+						setPasswordDialogOpen(true);
+					},
+					onChangeEmail: (user) => {
+						setSelectedUser(user);
+						setEmailDialogOpen(true);
+					},
+					onCancelDeletion: (user) => {
+						setSelectedUser(user);
+						setCancelDeletionDialogOpen(true);
+					},
+					onDisableUser: (user) => {
+						setSelectedUser(user);
+						setDisableDialogOpen(true);
+					},
+					onDeleteUser: (user) => {
+						setSelectedUser(user);
+						setDeleteDialogOpen(true);
+					},
+					onChangeRole: (user) => {
+						setSelectedUser(user);
+						setRoleDialogOpen(true);
+					}
 				},
-				onChangeEmail: (user) => {
-					setSelectedUser(user);
-					setEmailDialogOpen(true);
-				},
-				onCancelDeletion: (user) => {
-					setSelectedUser(user);
-					setCancelDeletionDialogOpen(true);
-				},
-				onDisableUser: (user) => {
-					setSelectedUser(user);
-					setDisableDialogOpen(true);
-				},
-				onDeleteUser: (user) => {
-					setSelectedUser(user);
-					setDeleteDialogOpen(true);
-				},
-				onChangeRole: (user) => {
-					setSelectedUser(user);
-					setRoleDialogOpen(true);
-				}
-			}),
+				isUpdating
+			),
 		[]
 	);
 	return (

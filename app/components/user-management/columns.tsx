@@ -38,7 +38,10 @@ interface ColumnActions {
 
 function getUserStatus(status: string) {}
 
-export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
+export function getUserColumns(
+	actions: ColumnActions,
+	isUpdating: boolean
+): ColumnDef<User>[] {
 	return [
 		{
 			accessorKey: 'user_name',
@@ -215,6 +218,7 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 								{isPendingDeletion && (
 									<>
 										<DropdownMenuItem
+											disabled={isUpdating}
 											onClick={() => actions.onCancelDeletion(user)}
 											className={`${isPendingDeletion ? '' : ''} duration-300`}
 										>
@@ -224,6 +228,7 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 								)}
 
 								<DropdownMenuItem
+									disabled={isUpdating}
 									onClick={() => actions.onChangeRole(user)}
 									className='duration-300'
 								>
@@ -232,6 +237,7 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 								</DropdownMenuItem>
 
 								<DropdownMenuItem
+									disabled={isUpdating}
 									onClick={() => actions.onDisableUser(user)}
 									className={`duration-300`}
 								>
@@ -239,6 +245,7 @@ export function getUserColumns(actions: ColumnActions): ColumnDef<User>[] {
 								</DropdownMenuItem>
 
 								<DropdownMenuItem
+									disabled={isUpdating}
 									onClick={() => actions.onDeleteUser(user)}
 									className='text-destructive focus:text-destructive duration-300'
 								>

@@ -101,7 +101,11 @@ export function DataTable<TData, TValue>({
 						className='w-70'
 					/>
 
-					<Button className='font-light' onClick={() => onOpenAddDialog(true)}>
+					<Button
+						disabled={isUserTableLoading}
+						className='font-light'
+						onClick={() => onOpenAddDialog(true)}
+					>
 						Add User <UserAdd />
 					</Button>
 				</div>
@@ -119,6 +123,7 @@ export function DataTable<TData, TValue>({
 							{[10, 20, 30].map((size) => {
 								return (
 									<Button
+										disabled={isUserTableLoading}
 										onClick={onPageSizeChange(size)}
 										variant='ghost'
 										className={`font-light transition-colors duration-300 ${size === pageSize ? 'bg-muted' : 'bg-transparent'}`}
@@ -146,6 +151,7 @@ export function DataTable<TData, TValue>({
 							{['all', 'admin', 'basic'].map((role) => {
 								return (
 									<Button
+										disabled={isUserTableLoading}
 										onClick={() => {
 											if (role === 'all') {
 												table.getColumn('role')?.setFilterValue('');
@@ -185,7 +191,7 @@ export function DataTable<TData, TValue>({
 					</TableHeader>
 					<TableBody>
 						{isUserTableLoading ? (
-							Array.from({ length: 10 }).map((_, i) => (
+							Array.from({ length: pageSize }).map((_, i) => (
 								<TableRow key={`skeleton-${i}`}>
 									<TableCell>
 										<div className='h-4 w-32 animate-pulse rounded bg-muted' />
@@ -276,7 +282,7 @@ export function DataTable<TData, TValue>({
 						variant='outline'
 						size='sm'
 						onClick={() => table.previousPage()}
-						disabled={!table.getCanPreviousPage()}
+						disabled={!table.getCanPreviousPage() || isUserTableLoading}
 					>
 						<ChevronLeft /> Previous
 					</Button>
@@ -285,7 +291,7 @@ export function DataTable<TData, TValue>({
 						size='sm'
 						className='text-primary'
 						onClick={() => table.nextPage()}
-						disabled={!table.getCanNextPage()}
+						disabled={!table.getCanNextPage() || isUserTableLoading}
 					>
 						Next <ChevronRight />
 					</Button>
