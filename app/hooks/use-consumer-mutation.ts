@@ -6,6 +6,7 @@ import { consumerGuideKeys } from './use-consumer-guides';
 import { generateId } from '@/utils/generate-id';
 import { v4 as uuidV4 } from 'uuid';
 import { useUploadStore, type EnqueueUploadPayload } from '@/store/useUploadStore';
+import { useConsumerGuideStore } from '@/store/useConsumerGuideStore';
 interface AddItemParams {
 	data: ConsumerGuideFormValues;
 	imageFile?: File | null;
@@ -36,11 +37,6 @@ export function useAddConsumer() {
 				});
 			}
 
-			if (payloads.length > 0) {
-				setInvalidationKey([...consumerGuideKeys.all]);
-				useUploadStore.getState().enqueueUploads(payloads);
-			}
-
 			const newData: ConsumerGuide = {
 				name: data.name,
 				definition: data.definition,
@@ -51,10 +47,23 @@ export function useAddConsumer() {
 				is_deleted: false
 			};
 
-			return consumerGuideService.add({ ...newData });
+			const result = await consumerGuideService.add({ ...newData });
+
+			if (payloads.length > 0) {
+				setInvalidationKey([...consumerGuideKeys.all]);
+				useUploadStore.getState().enqueueUploads(payloads);
+			}
+
+			return result;
+		},
+		onMutate: () => {
+			useConsumerGuideStore.getState().setIsAdding(true);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: consumerGuideKeys.all });
+		},
+		onSettled: () => {
+			useConsumerGuideStore.getState().setIsAdding(false);
 		}
 	});
 }
@@ -79,11 +88,6 @@ export function useUpdateConsumer() {
 				});
 			}
 
-			if (payloads.length > 0) {
-				setInvalidationKey([...consumerGuideKeys.all]);
-				useUploadStore.getState().enqueueUploads(payloads);
-			}
-
 			const updatedData: ConsumerGuideFormValues = {
 				name: data.name,
 				definition: data.definition,
@@ -93,10 +97,23 @@ export function useUpdateConsumer() {
 				imageId: id
 			};
 
-			return consumerGuideService.update(data.id as string, updatedData);
+			const result = await consumerGuideService.update(data.id as string, updatedData);
+
+			if (payloads.length > 0) {
+				setInvalidationKey([...consumerGuideKeys.all]);
+				useUploadStore.getState().enqueueUploads(payloads);
+			}
+
+			return result;
+		},
+		onMutate: () => {
+			useConsumerGuideStore.getState().setIsUpdating(true);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: consumerGuideKeys.all });
+		},
+		onSettled: () => {
+			useConsumerGuideStore.getState().setIsUpdating(false);
 		}
 	});
 }

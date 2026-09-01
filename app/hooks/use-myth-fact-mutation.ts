@@ -5,6 +5,7 @@ import { mythFactKeys } from '@/hooks/use-myth-facts';
 import { generateId } from '@/utils/generate-id';
 import { useUploadStore, type EnqueueUploadPayload } from '@/store/useUploadStore';
 import { v4 as uuidV4 } from 'uuid';
+import { useMythFactStore } from '@/store/useMythFactStore';
 
 export function useAddMythFact() {
 	const queryClient = useQueryClient();
@@ -54,11 +55,6 @@ export function useAddMythFact() {
 				}
 			});
 
-			if (payloads.length > 0) {
-				setInvalidationKey([...mythFactKeys.all]);
-				useUploadStore.getState().enqueueUploads(payloads);
-			}
-
 			const guideData: MythFactFormValues = {
 				name: data.name,
 				sources: data.sources,
@@ -75,11 +71,24 @@ export function useAddMythFact() {
 				}))
 			};
 
-			return mythFactService.add(guideData as MythFact);
+			const result = await mythFactService.add(guideData as MythFact);
+
+			if (payloads.length > 0) {
+				setInvalidationKey([...mythFactKeys.all]);
+				useUploadStore.getState().enqueueUploads(payloads);
+			}
+
+			return result;
+		},
+		onMutate: () => {
+			useMythFactStore.getState().setIsAdding(true);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['myth-facts'] });
 			queryClient.invalidateQueries({ queryKey: ['guides'] });
+		},
+		onSettled: () => {
+			useMythFactStore.getState().setIsAdding(false);
 		}
 	});
 }
@@ -137,11 +146,6 @@ export function useUpdateMythFact() {
 				}
 			});
 
-			if (payloads.length > 0) {
-				setInvalidationKey([...mythFactKeys.all]);
-				useUploadStore.getState().enqueueUploads(payloads);
-			}
-
 			const updateData: MythFactFormValues = {
 				...data,
 				displayImage: { fileHash: data.displayImage.fileHash },
@@ -157,10 +161,24 @@ export function useUpdateMythFact() {
 				}))
 			};
 
-			return mythFactService.update(data.id as string, updateData);
+			const result = await mythFactService.update(data.id as string, updateData);
+
+			if (payloads.length > 0) {
+				setInvalidationKey([...mythFactKeys.all]);
+				useUploadStore.getState().enqueueUploads(payloads);
+			}
+
+			return result;
+		},
+
+		onMutate: () => {
+			useMythFactStore.getState().setIsUpdating(true);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['myth-facts'] });
+		},
+		onSettled: () => {
+			useMythFactStore.getState().setIsUpdating(false);
 		}
 	});
 }
