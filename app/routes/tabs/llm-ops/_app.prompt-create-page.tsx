@@ -30,6 +30,19 @@ import Layers from '@/components/icons/layers';
 import Alert from '@/components/icons/alert';
 import CircleCheck from '@/components/icons/circle-check';
 import { toast } from 'sonner';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import CheckMarkBadge from '@/components/icons/checkmark-badge';
+import X from '@/components/icons/x';
+import BadgeAlert from '@/components/icons/badge-alert';
 
 export default function PromptCreatePage() {
 	const navigate = useNavigate();
@@ -52,6 +65,9 @@ export default function PromptCreatePage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const [pendingPromptType, setPendingPromptType] = useState<PromptType | null>(null);
+	const [switchConfirmOpen, setSwitchConfirmOpen] = useState(false);
+
 	const typeConfig = useMemo(
 		() => PROMPT_TYPES[formData.promptType] || PROMPT_TYPES.ingredient_analysis,
 		[formData.promptType]
@@ -69,12 +85,46 @@ export default function PromptCreatePage() {
 		[formData.promptType, formData.variables]
 	);
 
-	const handlePromptTypeChange = (newType: PromptType) => {
+	const hasEditorContent = useMemo(() => {
+		const hasText = (formData.contentTemplate || '').trim().length > 0;
+		const hasVars = (formData.variables || []).length > 0;
+		const hasUrls = (formData.contextUrls || []).length > 0;
+		return hasText || hasVars || hasUrls;
+	}, [formData.contentTemplate, formData.variables, formData.contextUrls]);
+
+	const executeTypeSwitch = (newType: PromptType) => {
 		setFormData((prev) => ({
 			...prev,
-			promptType: newType
+			promptType: newType,
+			contentJson: {},
+			contentHtml: '',
+			contentTemplate: '',
+			variables: [],
+			contextUrls: []
 		}));
 		setError(null);
+	};
+
+	const handlePromptTypeChange = (newType: PromptType) => {
+		if (newType === formData.promptType) return;
+		if (hasEditorContent) {
+			setPendingPromptType(newType);
+			setSwitchConfirmOpen(true);
+		} else {
+			executeTypeSwitch(newType);
+		}
+	};
+
+	const confirmPromptTypeSwitch = () => {
+		if (pendingPromptType) {
+			executeTypeSwitch(pendingPromptType);
+		}
+		setPendingPromptType(null);
+		setSwitchConfirmOpen(false);
+	};
+	const cancelPromptTypeSwitch = () => {
+		setPendingPromptType(null);
+		setSwitchConfirmOpen(false);
 	};
 
 	const handleTagsChange = (tags: string[]) => {
@@ -100,8 +150,6 @@ export default function PromptCreatePage() {
 			return;
 		}
 
-		console.log(createPrompt.isPending);
-
 		const payload: PromptFormData = {
 			...formData,
 			status: formData.tags.includes('production') ? 'active' : formData.status
@@ -109,10 +157,40 @@ export default function PromptCreatePage() {
 
 		createPrompt.mutate(payload, {
 			onError: () => {
-				toast.error('Failed to create prompt.');
+				toast.error(`Prompt Create Failed`, {
+					position: 'top-right',
+					description: `The prompt is not created. Please try again.`,
+					descriptionClassName: 'text-red',
+					duration: 12000,
+					icon: <BadgeAlert className='text-red-500 size-5' />,
+					cancel: {
+						label: (
+							<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+						),
+						onClick: () => {}
+					}
+				});
 			},
 			onSuccess: () => {
-				toast.success('Prompt created successfully.');
+				toast.success(
+					`New Prompt Created for ${formData.promptType
+						.split('_')
+						.map((str) => str[0].toUpperCase() + str.slice(1))
+						.join(' ')}.`,
+					{
+						position: 'top-right',
+						description: `"${formData.name}" is successfully created.`,
+						descriptionClassName: 'text-red',
+						duration: 12000,
+						icon: <CheckMarkBadge className='text-green-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
+					}
+				);
 				navigate(`/llm-ops`, { viewTransition: true });
 			}
 		});
@@ -131,6 +209,8 @@ export default function PromptCreatePage() {
 			variables: data.variables
 		}));
 	};
+
+	const pendingTypeConfig = pendingPromptType ? PROMPT_TYPES[pendingPromptType] : null;
 
 	return (
 		<div className='container mx-auto p-6 max-w-5xl space-y-6'>
@@ -277,7 +357,7 @@ export default function PromptCreatePage() {
 							<div>
 								<CardTitle className='text-base'>{typeConfig.label} Template</CardTitle>
 								<CardDescription className='text-xs'>
-									Write prompt text and insert Handlebars runtime variables.
+									Write prompt text and insert runtime variables.
 								</CardDescription>
 							</div>
 							<Badge
@@ -360,6 +440,40 @@ export default function PromptCreatePage() {
 						</CardContent>
 					</Card>
 				</div>
+
+				<AlertDialog open={switchConfirmOpen} onOpenChange={setSwitchConfirmOpen}>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle className='flex items-center gap-2 text-amber-600'>
+								<Alert className='h-5 w-5 shrink-0 text-amber-600' />
+								Switch Prompt Type & Clear Editor?
+							</AlertDialogTitle>
+							<AlertDialogDescription className='space-y-2 text-xs leading-relaxed'>
+								<p>
+									Switching prompt type to{' '}
+									<strong className='text-foreground font-semibold'>
+										{pendingTypeConfig?.label || 'the new prompt type'}
+									</strong>{' '}
+									will clear your current template text, inserted variables, and context
+									URLs.
+								</p>
+								<p className='bg-muted p-2 rounded text-muted-foreground border'>
+									<strong>Why?</strong> Each prompt type requires a specific set of
+									runtime variables. Resetting the editor ensures your template matches
+									the new prompt type schema.
+								</p>
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel onClick={cancelPromptTypeSwitch}>
+								Cancel
+							</AlertDialogCancel>
+							<AlertDialogAction onClick={confirmPromptTypeSwitch} className=''>
+								Clear & Switch Prompt Type
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 			</div>
 		</div>
 	);

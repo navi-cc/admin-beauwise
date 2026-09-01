@@ -36,6 +36,11 @@ import Loader from '@/components/icons/loader';
 import Alert from '@/components/icons/alert';
 import Layers from '@/components/icons/layers';
 import Lock from '@/components/icons/lock';
+import { queryClient } from '@/lib/query-client';
+import { toast } from 'sonner';
+import CheckMarkBadge from '@/components/icons/checkmark-badge';
+import BadgeAlert from '@/components/icons/badge-alert';
+import X from '@/components/icons/x';
 
 export default function PromptEditPage() {
 	const { id: promptId } = useParams<{ id: string }>();
@@ -145,8 +150,32 @@ export default function PromptEditPage() {
 				},
 				changeNote: formData.changeNote || 'Updated prompt configuration'
 			});
+
+			toast.success(`Prompt Updated`, {
+				position: 'top-right',
+				description: `"${formData.name}" prompt is successfully updated.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
+			queryClient.invalidateQueries({ queryKey: ['activity-logs'] });
 			navigate(`/llm-ops/detail/${promptId}`, { viewTransition: true });
 		} catch (err: any) {
+			toast.error(`Prompt Update Failed`, {
+				position: 'top-right',
+				description: `Something went wrong. Please try again`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 			console.error('Failed to save prompt:', err);
 			setError(err.message || 'Failed to update prompt.');
 		}
