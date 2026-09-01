@@ -94,7 +94,6 @@ export async function getPromptById(id: string): Promise<Prompt> {
 export async function createPrompt(data: PromptFormData): Promise<string> {
 	const user = auth.currentUser;
 
-	// 1. Extract and validate completeness of required runtime variables
 	const detectedVariables = extractVariables(data.contentJson);
 	const validation = validatePromptVariables(detectedVariables, data.promptType);
 
@@ -106,10 +105,8 @@ export async function createPrompt(data: PromptFormData): Promise<string> {
 		);
 	}
 
-	// 2. Production Status Lock: Production prompts must always be Active
 	const finalStatus = data.tags.includes('production') ? 'active' : data.status;
 
-	// 3. Automatically demote any existing Production prompt of the same type
 	await autoDemoteExistingProductionPrompt(data.promptType, data.tags);
 
 	const now = Timestamp.now();
