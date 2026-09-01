@@ -393,6 +393,11 @@ export default function UserManagement() {
 
 	const retry = () => refetch();
 
+	const isUpdating =
+		addUser.isPending ||
+		deleteUserMutate.isPending ||
+		accountStatusChange.isPending ||
+		accountRoleChange.isPending;
 	return (
 		<div className='flex flex-col gap-y-2.5'>
 			<div>
@@ -411,6 +416,7 @@ export default function UserManagement() {
 				)}
 			</div>
 			<UserManagementTable
+				isUpdating={isUpdating}
 				isError={isError}
 				isUserTableLoading={isUserTableLoading}
 				isRefetchError={isRefetchError}
