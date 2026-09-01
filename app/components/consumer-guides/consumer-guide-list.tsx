@@ -48,6 +48,10 @@ import ListViewIcon from '../icons/list-view';
 import { TableView } from './table-view';
 import CollectionsBookmark from '../icons/collections-bookmark';
 import { ListView } from './list-view';
+import CheckMarkBadge from '../icons/checkmark-badge';
+import X from '../icons/x';
+import BadgeAlert from '../icons/badge-alert';
+import { useConsumerGuideStore } from '@/store/useConsumerGuideStore';
 
 type FilterItem = {
 	name: string;
@@ -65,6 +69,9 @@ export function ConsumerGuideList() {
 		{ name: 'Deleted Only', key: 'deleted', isCheck: false },
 		{ name: 'Active Only', key: 'active', isCheck: false }
 	]);
+
+	const isAddingItem = useConsumerGuideStore((state) => state.isAdding);
+	const isUpdatingItem = useConsumerGuideStore((state) => state.isUpdating);
 
 	const selectedFilter = { ...filters.filter((item) => item.isCheck)[0] };
 	const [formOpen, setFormOpen] = useState(false);
@@ -116,28 +123,73 @@ export function ConsumerGuideList() {
 		setRestoreDialogOpen(true);
 	};
 
+	const isUpdating =
+		deleteMutation.isPending ||
+		restoreMutation.isPending ||
+		isAddingItem ||
+		isUpdatingItem;
+
 	const handleDeleteConfirm = async () => {
 		if (!deletingItem) return;
+		setDeleteDialogOpen(false);
 		try {
 			await deleteMutation.mutateAsync(deletingItem.id);
-			toast.success(`"${deletingItem.name}" has been deleted.`);
+			toast.success('Item Deleted', {
+				position: 'top-right',
+				description: `"${deletingItem.name}" has been deleted.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} catch (error: any) {
-			toast.error(error?.message ?? 'Failed to delete item');
+			toast.error('Item Delete Failed', {
+				position: 'top-right',
+				description: `"${deletingItem.name}" is not deleted. Please try again.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} finally {
-			setDeleteDialogOpen(false);
 			setDeletingItem(null);
 		}
 	};
 
 	const handleRestoreConfirm = async () => {
 		if (!restoringConsumer) return;
+		setRestoreDialogOpen(false);
 		try {
 			await restoreMutation.mutateAsync(restoringConsumer.id);
-			toast.success(`"${restoringConsumer.name}" has been restored.`);
+			toast.success('Item Restored', {
+				position: 'top-right',
+				description: `"${restoringConsumer.name}" has been restored.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} catch (error: any) {
-			toast.error(error?.message ?? 'Failed to restore item');
+			toast.error('Item Restore Failed', {
+				description: `"${restoringConsumer.name}" is not restored. Please try again.`,
+				position: 'top-right',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} finally {
-			setRestoreDialogOpen(false);
 			setRestoringConsumer(null);
 		}
 	};
@@ -198,7 +250,7 @@ export function ConsumerGuideList() {
 										<DropdownMenuCheckboxItem
 											checked={isCheck}
 											key={key}
-											disabled={isFetching}
+											disabled={isFetching || isUpdating}
 											className='transition-colors duration-300'
 											onCheckedChange={(checked) => {
 												const newItems = filters
@@ -235,6 +287,7 @@ export function ConsumerGuideList() {
 								{[10, 20, 30].map((size) => {
 									return (
 										<Button
+											disabled={isFetching || isUpdating}
 											onClick={() => setPageSize(size)}
 											variant='ghost'
 											className={`font-light transition-colors duration-300 ${size === pageSize ? 'bg-muted' : 'bg-transparent'}`}
@@ -282,6 +335,7 @@ export function ConsumerGuideList() {
 				<TabsContent value='list-view'>
 					<ListView
 						{...{
+							isUpdating,
 							consumerGuides: items,
 							handleRestoreClick,
 							query,
@@ -291,6 +345,7 @@ export function ConsumerGuideList() {
 							handleNextPage,
 							handlePrevPage,
 							page,
+							pageSize,
 							totalPages,
 							hasMore
 						}}
@@ -300,6 +355,7 @@ export function ConsumerGuideList() {
 				<TabsContent value='table-view'>
 					<TableView
 						{...{
+							isUpdating,
 							items,
 							query,
 							handleAdd,
@@ -311,6 +367,7 @@ export function ConsumerGuideList() {
 							totalCount,
 							totalPages,
 							page,
+							pageSize,
 							isFetching,
 							hasMore,
 							isError,
@@ -322,6 +379,7 @@ export function ConsumerGuideList() {
 				<TabsContent value='grid-view'>
 					<GridView
 						{...{
+							isUpdating,
 							items,
 							query,
 							handleRestoreClick,
@@ -329,6 +387,7 @@ export function ConsumerGuideList() {
 							handleDeleteClick,
 							isFetching,
 							page,
+							pageSize,
 							totalPages,
 							handlePrevPage,
 							handleNextPage,

@@ -22,7 +22,9 @@ export function GridView({
 	totalPages,
 	hasMore,
 	page,
-	isFetching
+	pageSize,
+	isFetching,
+	isUpdating
 }: {
 	items: ConsumerGuide[];
 	query: string;
@@ -31,16 +33,18 @@ export function GridView({
 	totalPages: number;
 	hasMore: boolean;
 	page: number;
+	pageSize: number;
 	handleRestoreClick: (consumerGuide: ConsumerGuide) => void;
 	handleEdit: (consumerGuide: ConsumerGuide) => void;
 	handleDeleteClick: (consumerGuide: ConsumerGuide) => void;
 	isFetching: boolean;
+	isUpdating: boolean;
 }) {
 	return (
 		<div className='relative'>
-			{isFetching ? (
+			{isFetching || isUpdating ? (
 				<div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-					{Array.from({ length: 10 }).map((_, i) => (
+					{Array.from({ length: pageSize }).map((_, i) => (
 						<Card key={`skeleton-${i}`} className='animate-pulse h-40'>
 							<CardHeader>
 								<div className='h-10 w-32 bg-muted rounded' />

@@ -39,6 +39,9 @@ import { cn } from '@/lib/utils';
 import { PhotoView } from 'react-photo-view';
 import Eye from '../icons/eye';
 import { Skeleton } from '../ui/skeleton';
+import BadgeAlert from '../icons/badge-alert';
+import X from '../icons/x';
+import CheckMarkBadge from '../icons/checkmark-badge';
 interface ItemFormDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -142,9 +145,40 @@ export function ConsumerGuideFormDialog({
 							throw new Error(result?.message);
 						}
 
-						toast.success(`${item.name} updated successfully.`);
+						toast.success('Item Updated', {
+							position: 'top-right',
+							description: `${item.name} updated successfully`,
+							descriptionClassName: 'text-red',
+							duration: 12000,
+							icon: <CheckMarkBadge className='text-green-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
+						});
 					},
-					onError: (err) => toast.error(err.message)
+					onError: (err) => {
+						let message = 'Something went wrong. Please try again';
+
+						if (err?.message) {
+							message = err.message;
+						}
+
+						toast.error('Item Not Updated', {
+							description: message,
+							position: 'top-right',
+							duration: 12000,
+							icon: <BadgeAlert className='text-red-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
+						});
+					}
 				}
 			);
 		} else {
@@ -157,8 +191,41 @@ export function ConsumerGuideFormDialog({
 			addMutation.mutate(
 				{ data },
 				{
-					onSuccess: () => toast.success(`${data.name} added successfully`),
-					onError: (err) => toast.error(err.message)
+					onSuccess: () => {
+						toast.success('Item Added', {
+							position: 'top-right',
+							description: `${data.name} is added successfully`,
+							descriptionClassName: 'text-red',
+							duration: 12000,
+							icon: <CheckMarkBadge className='text-green-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
+						});
+					},
+					onError: (err) => {
+						let message = 'Something went wrong. Please try again';
+
+						if (err?.message) {
+							message = err.message;
+						}
+
+						toast.error('Item Not Added', {
+							description: message,
+							position: 'top-right',
+							duration: 12000,
+							icon: <BadgeAlert className='text-red-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
+						});
+					}
 				}
 			);
 			onOpenChange(false);
@@ -285,7 +352,7 @@ export function ConsumerGuideFormDialog({
 
 									{!imageLoadError && imagePreview && (
 										<div className='flex flex-col gap-1'>
-											<Button
+											{/* <Button
 												type='button'
 												variant='outline'
 												size='sm'
@@ -297,7 +364,7 @@ export function ConsumerGuideFormDialog({
 											>
 												<Trash className='h-3 w-3' />
 												Remove
-											</Button>
+											</Button> */}
 
 											<PhotoView src={imagePreview}>
 												<Button
