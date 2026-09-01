@@ -50,6 +50,10 @@ import ListViewIcon from '../icons/list-view';
 import { GridView } from './grid-view';
 import Books from '../icons/books';
 import { ListView } from './list-view';
+import X from '../icons/x';
+import CheckMarkBadge from '../icons/checkmark-badge';
+import BadgeAlert from '../icons/badge-alert';
+import { useIngredientStore } from '@/store/useIngredientStore';
 
 type FilterItem = {
 	name: string;
@@ -115,6 +119,9 @@ export function IngredientTable() {
 
 	const [restoringIngredient, setRestoringIngredient] = useState<Ingredient | null>(null);
 	const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+
+	const isAddingIngredient = useIngredientStore((state) => state.isAdding);
+	const isUpdatingIngredient = useIngredientStore((state) => state.isUpdating);
 
 	const {
 		items,
@@ -191,26 +198,66 @@ export function IngredientTable() {
 
 	const handleDeleteConfirm = async () => {
 		if (!deletingIngredient) return;
+		setDeleteDialogOpen(false);
 		try {
 			await deleteMutation.mutateAsync(deletingIngredient.id);
-			toast.success(`"${deletingIngredient.name}" has been deleted.`);
+			toast.success('Ingredient Deleted', {
+				position: 'top-right',
+				description: `"${deletingIngredient.name}" has been deleted.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} catch (error: any) {
-			toast.error(error?.message ?? 'Failed to delete ingredient');
+			toast.error('Ingredient Delete Failed', {
+				position: 'top-right',
+				description: `"${deletingIngredient.name}" is not deleted. Please try again.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} finally {
-			setDeleteDialogOpen(false);
 			setDeletingIngredient(null);
 		}
 	};
 
 	const handleRestoreConfirm = async () => {
 		if (!restoringIngredient) return;
+		setRestoreDialogOpen(false);
 		try {
 			await restoreMutation.mutateAsync(restoringIngredient.id);
-			toast.success(`"${restoringIngredient.name}" has been restored.`);
+
+			toast.success('Ingredient Restored', {
+				position: 'top-right',
+				description: `"${restoringIngredient.name}" has been restored.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} catch (error: any) {
-			toast.error(error?.message ?? 'Failed to restore ingredient');
+			toast.error('Ingredient Restore Failed', {
+				description: `"${restoringIngredient.name}" is not restored. Please try again.`,
+				position: 'top-right',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} finally {
-			setRestoreDialogOpen(false);
 			setRestoringIngredient(null);
 		}
 	};
@@ -236,6 +283,11 @@ export function IngredientTable() {
 		delayQuery(e.target.value);
 	};
 
+	const isUpdating =
+		restoreMutation.isPending ||
+		deleteMutation.isPending ||
+		isAddingIngredient ||
+		isUpdatingIngredient;
 	return (
 		<div className='space-y-2.5'>
 			<div>
@@ -284,7 +336,7 @@ export function IngredientTable() {
 									<DropdownMenuCheckboxItem
 										checked={isCheck}
 										key={key}
-										disabled={isFetching}
+										disabled={isFetching || isUpdating}
 										className='transition-colors duration-300'
 										onCheckedChange={(checked) => {
 											const newItems = filters
@@ -366,6 +418,7 @@ export function IngredientTable() {
 							/>
 
 							<Button
+								disabled={isFetching || isUpdating}
 								className='font-light self-end mt-1.5 pl-3.5 pr-3.5'
 								onClick={handleApplyTags}
 							>
@@ -386,6 +439,7 @@ export function IngredientTable() {
 							{[10, 20, 30].map((size) => {
 								return (
 									<Button
+										disabled={isFetching || isUpdating}
 										onClick={handleChangePageSize(size)}
 										variant='ghost'
 										className={`font-light transition-colors duration-300 ${size === pageSize ? 'bg-muted' : 'bg-transparent'}`}
@@ -433,8 +487,10 @@ export function IngredientTable() {
 				<TabsContent value='list-view'>
 					<ListView
 						{...{
+							pageSize,
 							ingredients: items,
 							query,
+							isUpdating,
 							isFetching,
 							handleEdit,
 							handleRestoreClick,
@@ -451,6 +507,7 @@ export function IngredientTable() {
 				<TabsContent value='table-view'>
 					<TableView
 						{...{
+							isUpdating,
 							items,
 							query,
 							handleAdd,
@@ -462,6 +519,7 @@ export function IngredientTable() {
 							totalCount,
 							totalPages,
 							page,
+							pageSize,
 							isFetching,
 							hasMore,
 							isError,
@@ -473,6 +531,7 @@ export function IngredientTable() {
 				<TabsContent value='grid-view'>
 					<GridView
 						{...{
+							isUpdating,
 							items,
 							query,
 							handleRestoreClick,
@@ -480,6 +539,7 @@ export function IngredientTable() {
 							handleDeleteClick,
 							isFetching,
 							page,
+							pageSize,
 							totalPages,
 							handlePrevPage,
 							handleNextPage,

@@ -30,6 +30,9 @@ import { generateId } from '@/utils/generate-id';
 import { Field, FieldError, FieldLabel } from '../ui/field';
 import FileAdd from '../icons/file-add';
 import _ from 'lodash';
+import X from '../icons/x';
+import CheckMarkBadge from '../icons/checkmark-badge';
+import BadgeAlert from '../icons/badge-alert';
 
 interface IngredientFormDialogProps {
 	open: boolean;
@@ -75,14 +78,80 @@ export function IngredientFormDialog({
 			updateMutation.mutate(
 				{ id: ingredient.id, data },
 				{
-					onSuccess: () => toast.success(`${ingredient.name} updated successfully`),
-					onError: (err) => toast.error(err.message)
+					onSuccess: () => {
+						toast.success('Ingredient Updated', {
+							position: 'top-right',
+							description: `${ingredient.name} updated successfully`,
+							descriptionClassName: 'text-red',
+							duration: 12000,
+							icon: <CheckMarkBadge className='text-green-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
+						});
+					},
+					onError: (err) => {
+						let message = 'Something went wrong. Please try again';
+
+						if (err?.message) {
+							message = err.message;
+						}
+
+						toast.error('Ingredient Not Updated', {
+							description: message,
+							position: 'top-right',
+							duration: 12000,
+							icon: <BadgeAlert className='text-red-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
+						});
+					}
 				}
 			);
 		} else {
 			addMutation.mutate(data, {
-				onSuccess: () => toast.success(`${data.name} added successfully`),
-				onError: (err) => toast.error(err.message)
+				onSuccess: () => {
+					toast.success('Ingredient Added', {
+						position: 'top-right',
+						description: `${data.name} is added successfully`,
+						descriptionClassName: 'text-red',
+						duration: 12000,
+						icon: <CheckMarkBadge className='text-green-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
+					});
+				},
+				onError: (err) => {
+					let message = 'Something went wrong. Please try again';
+
+					if (err?.message) {
+						message = err.message;
+					}
+
+					toast.error('Ingredient Not Added', {
+						description: message,
+						position: 'top-right',
+						duration: 12000,
+						icon: <BadgeAlert className='text-red-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
+					});
+				}
 			});
 		}
 		onOpenChange(false);
@@ -150,7 +219,7 @@ export function IngredientFormDialog({
 
 									<Input id={field.name} placeholder='e.g., Hyaluronic Acid' {...field} />
 
-									{!isEditing && field.value && (
+									{/* {!isEditing && field.value && (
 										<p className='text-xs text-muted-foreground'>
 											ID: <code>{generateId(field.value)}</code>
 										</p>
@@ -159,7 +228,7 @@ export function IngredientFormDialog({
 										<p className='text-xs text-muted-foreground'>
 											ID: <code>{ingredient.id}</code> (read-only)
 										</p>
-									)}
+									)} */}
 									{invalid && <FieldError errors={[error]} />}
 								</Field>
 							)}

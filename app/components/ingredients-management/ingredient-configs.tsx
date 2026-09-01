@@ -26,6 +26,8 @@ import X from '@/components/icons/x';
 import { Skeleton } from '../ui/skeleton';
 import RefreshCw from '../icons/refresh-cw';
 import Settings from '../icons/settings';
+import CheckMarkBadge from '../icons/checkmark-badge';
+import BadgeAlert from '../icons/badge-alert';
 
 interface ConfigItemRowProps {
 	item: string;
@@ -61,19 +63,62 @@ function ConfigItemRow({ item, field, allItems }: ConfigItemRowProps) {
 
 		try {
 			await updateOption({ field, oldValue: item, newValue: trimmedValue });
-			toast.success(`Updated to "${trimmedValue}"`);
+
+			toast.success(`Item Updated`, {
+				position: 'top-right',
+				description: `"${item}" is successfully updated to ${trimmedValue}.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
+
 			setIsEditing(false);
 		} catch (error: any) {
-			toast.error(error.message || 'Failed to update item');
+			toast.error(`Item Update Failed`, {
+				position: 'top-right',
+				description: `"${item}" is not updated. Please try again.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		}
 	};
 
 	const handleDelete = async () => {
 		try {
 			await deleteOption({ field, value: item });
-			toast.success(`Deleted "${item}"`);
+
+			toast.success(`Item Deleted`, {
+				position: 'top-right',
+				description: `"${item}" is successfully deleted.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} catch (error: any) {
-			toast.error(error.message || 'Failed to delete item');
+			toast.error(`Item Delete Failed`, {
+				position: 'top-right',
+				description: `"${item}" is not deleted. Please try again.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		}
 	};
 
@@ -176,10 +221,32 @@ function ConfigCard({ title, description, field, items }: ConfigCardProps) {
 
 		try {
 			await addOption({ field, value: trimmedValue });
-			toast.success(`Added "${trimmedValue}" to ${title}`);
+
+			toast.success(`Item Added To ${title}`, {
+				position: 'top-right',
+				description: `"${trimmedValue}" is successfully added.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
+
 			setNewValue('');
 		} catch (error: any) {
-			toast.error(error.message || `Failed to add to ${title}`);
+			toast.error(`Item Not Added To ${title}`, {
+				position: 'top-right',
+				description: `Something went wrong. Please try again`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		}
 	};
 

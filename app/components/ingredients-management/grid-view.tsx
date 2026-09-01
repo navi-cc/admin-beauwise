@@ -23,6 +23,8 @@ export function GridView({
 	totalPages,
 	hasMore,
 	page,
+	pageSize,
+	isUpdating,
 	isFetching
 }: {
 	items: Ingredient[];
@@ -30,18 +32,20 @@ export function GridView({
 	handleNextPage: () => void;
 	handlePrevPage: () => void;
 	totalPages: number;
+	pageSize: number;
 	hasMore: boolean;
 	page: number;
 	handleRestoreClick: (ingredient: Ingredient) => void;
 	handleEdit: (ingredient: Ingredient) => void;
 	handleDeleteClick: (ingredient: Ingredient) => void;
+	isUpdating: boolean;
 	isFetching: boolean;
 }) {
 	return (
 		<div className='relative'>
-			{isFetching ? (
+			{isFetching || isUpdating ? (
 				<div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-					{Array.from({ length: 10 }).map((_, i) => (
+					{Array.from({ length: pageSize }).map((_, i) => (
 						<Card key={`skeleton-${i}`} className='animate-pulse h-40'>
 							<CardHeader>
 								<div className='h-10 w-32 bg-muted rounded' />

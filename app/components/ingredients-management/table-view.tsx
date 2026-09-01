@@ -24,6 +24,7 @@ import type { RefetchOptions } from '@tanstack/react-query';
 export function TableView({
 	items,
 	isFetching,
+	isUpdating,
 	isError,
 	retry,
 	handleAdd,
@@ -34,11 +35,13 @@ export function TableView({
 	handleNextPage,
 	totalCount,
 	totalPages,
+	pageSize,
 	page,
 	hasMore
 }: {
 	items: Ingredient[];
 	isFetching: boolean;
+	isUpdating: boolean;
 	isError: boolean;
 	retry: (options?: RefetchOptions) => Promise<void>;
 	handleAdd: () => void;
@@ -50,6 +53,7 @@ export function TableView({
 	totalCount: number;
 	totalPages: number;
 	page: number;
+	pageSize: number;
 	hasMore: boolean;
 }) {
 	return (
@@ -72,8 +76,8 @@ export function TableView({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{isFetching ? (
-							Array.from({ length: 5 }).map((_, i) => (
+						{isFetching || isUpdating ? (
+							Array.from({ length: pageSize }).map((_, i) => (
 								<TableRow key={`skeleton-${i}`}>
 									<TableCell>
 										<div className='h-4 w-32 animate-pulse rounded bg-muted' />

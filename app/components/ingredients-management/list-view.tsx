@@ -11,6 +11,7 @@ import RestoreBin from '../icons/restore-bin';
 export function ListView({
 	ingredients,
 	isFetching,
+	isUpdating,
 	query,
 	handleEdit,
 	handleRestoreClick,
@@ -18,10 +19,12 @@ export function ListView({
 	handleNextPage,
 	handlePrevPage,
 	page,
+	pageSize,
 	totalPages,
 	hasMore
 }: {
 	ingredients: Ingredient[];
+	isUpdating: boolean;
 	isFetching: boolean;
 	query: string;
 	handleRestoreClick: (ingredient: Ingredient) => void;
@@ -31,12 +34,13 @@ export function ListView({
 	handlePrevPage: () => void;
 	page: number;
 	totalPages: number;
+	pageSize: number;
 	hasMore: boolean;
 }) {
 	return (
 		<div className='flex flex-col gap-3'>
-			{isFetching ? (
-				Array.from({ length: 4 }).map((_, i) => (
+			{isFetching || isUpdating ? (
+				Array.from({ length: pageSize }).map((_, i) => (
 					<div
 						key={`skeleton-${i}`}
 						className='flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card animate-pulse'
