@@ -111,7 +111,13 @@ export function OcrParserEditor({
 	const editor = useEditor({
 		extensions: [
 			StarterKit.configure({
-				heading: { levels: [2, 3] }
+				bulletList: false,
+				orderedList: false,
+				listItem: false,
+				code: false,
+				codeBlock: false,
+				bold: false,
+				heading: false
 			}),
 			Placeholder.configure({
 				placeholder,
@@ -205,13 +211,13 @@ export function OcrParserEditor({
 				{/* Toolbar */}
 				{editable && (
 					<div className='flex items-center flex-wrap gap-0.5 px-2 py-1.5 border-b bg-muted/30'>
-						<ToolbarButton
+						{/* <ToolbarButton
 							icon={Bold}
 							label='Bold (Ctrl+B)'
 							isActive={editor.isActive('bold')}
 							onClick={() => editor.chain().focus().toggleBold().run()}
-						/>
-						<ToolbarButton
+						/> */}
+						{/* <ToolbarButton
 							icon={Italic}
 							label='Italic (Ctrl+I)'
 							isActive={editor.isActive('italic')}
@@ -262,7 +268,7 @@ export function OcrParserEditor({
 							onClick={() => editor.chain().focus().setHorizontalRule().run()}
 						/>
 
-						<Separator orientation='vertical' className='h-5 mx-1' />
+						<Separator orientation='vertical' className='h-5 mx-1' /> */}
 
 						{/* Quick insert button for rawOcrText */}
 						<Button
