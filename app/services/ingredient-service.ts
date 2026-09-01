@@ -31,6 +31,10 @@ export interface PaginatedResult {
 	pagination: PaginationInfo;
 }
 
+const controller = new AbortController();
+const { signal } = controller;
+const timeout = 5000;
+
 export const ingredientService = {
 	async getPaginated(
 		pageNumber: number,
@@ -91,16 +95,44 @@ export const ingredientService = {
 		};
 
 		const token = await auth.currentUser?.getIdToken();
-		await fetch(url.toString(), {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
-			},
-			body: JSON.stringify({
-				newItem: { ...ingredient }
-			})
-		});
+		const timeoutId = setTimeout(() => controller.abort(), timeout);
+		let result = null;
+
+		try {
+			const response = await fetch(url.toString(), {
+				signal,
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify({
+					newItem: { ...ingredient }
+				})
+			});
+
+			result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(`${result.message}`);
+			}
+		} catch (error: any) {
+			let message = 'Something went wrong. Please try again.';
+
+			if (error.message) {
+				message = error.message;
+			}
+
+			if (error.name === 'AbortError') {
+				message = 'Things are running a bit slow. Please try again';
+			}
+
+			throw new Error(message);
+		} finally {
+			clearTimeout(timeoutId);
+		}
+
+		return result;
 	},
 
 	async update(id: string, data: Partial<IngredientFormValues>): Promise<void> {
@@ -110,16 +142,44 @@ export const ingredientService = {
 		);
 
 		const token = await auth.currentUser?.getIdToken();
-		await fetch(url.toString(), {
-			method: 'PUT',
-			body: JSON.stringify({
-				updatedItem: { id, ...data }
-			}),
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
+		const timeoutId = setTimeout(() => controller.abort(), timeout);
+		let result = null;
+
+		try {
+			const response = await fetch(url.toString(), {
+				signal,
+				method: 'PUT',
+				body: JSON.stringify({
+					updatedItem: { id, ...data }
+				}),
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				}
+			});
+
+			result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(`${result.message}`);
 			}
-		});
+		} catch (error: any) {
+			let message = 'Something went wrong. Please try again.';
+
+			if (error.message) {
+				message = error.message;
+			}
+
+			if (error.name === 'AbortError') {
+				message = 'Things are running a bit slow. Please try again';
+			}
+
+			throw new Error(message);
+		} finally {
+			clearTimeout(timeoutId);
+		}
+
+		return result;
 	},
 
 	async softDelete(id: string): Promise<void> {
