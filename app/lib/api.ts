@@ -6,6 +6,10 @@ export const API_BASE_URL = import.meta.env.DEV
 	? 'http://127.0.0.1:5001/beauwise-1687a/asia-east2/admin'
 	: 'https://asia-east2-beauwise-1687a.cloudfunctions.net/admin';
 
+const controller = new AbortController();
+const { signal } = controller;
+
+const timeout = 5000;
 export const getUsers =
 	(maxPage: number, nextPageToken?: string | null, pageCount?: number) => async () => {
 		const token = await auth.currentUser?.getIdToken();
@@ -52,19 +56,41 @@ export const updateUserStatus = async function ({
 		: `${API_BASE_URL}/users/admin/${userId}/status`;
 
 	const token = await auth.currentUser?.getIdToken();
-	const response = await fetch(url, {
-		method: 'PATCH',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({ updatedItem: status.replaceAll(' ', '_').toUpperCase() })
-	});
+	const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-	const result = await response.json();
+	let result = null;
+	try {
+		const response = await fetch(url, {
+			method: 'PATCH',
+			signal,
+			headers: {
+				Authorization: `Bearer ${token}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ updatedItem: status.replaceAll(' ', '_').toUpperCase() })
+		});
 
-	if (!response.ok) {
-		throw new Error(`${result.message}`);
+		result = await response.json();
+
+		if (!response.ok) {
+			throw new Error(`${result.message}`);
+		}
+	} catch (error: any) {
+		let message = 'Something went wrong. Please try again.';
+
+		if (error.message) {
+			message = error.message;
+		}
+
+		if (error.name === 'AbortError') {
+			console.log('lolol haha');
+
+			message = 'Things are running a bit slow. Please try again';
+		}
+
+		throw new Error(message);
+	} finally {
+		clearTimeout(timeoutId);
 	}
 
 	return result;
@@ -81,19 +107,39 @@ export const updateUserRole = async function ({
 	const url = `${API_BASE_URL}/users/${userId}/role`;
 
 	const token = await auth.currentUser?.getIdToken();
-	const response = await fetch(url, {
-		method: 'PATCH',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({ updatedItem: role })
-	});
+	const timeoutId = setTimeout(() => controller.abort(), timeout);
+	let result = null;
 
-	const result = await response.json();
+	try {
+		const response = await fetch(url, {
+			signal,
+			method: 'PATCH',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ updatedItem: role })
+		});
 
-	if (!response.ok) {
-		throw new Error(`${result.message}`);
+		result = await response.json();
+
+		if (!response.ok) {
+			throw new Error(`${result.message}`);
+		}
+	} catch (error: any) {
+		let message = 'Something went wrong. Please try again.';
+
+		if (error.message) {
+			message = error.message;
+		}
+
+		if (error.name === 'AbortError') {
+			message = 'Things are running a bit slow. Please try again';
+		}
+
+		throw new Error(message);
+	} finally {
+		clearTimeout(timeoutId);
 	}
 
 	return result;
@@ -112,20 +158,40 @@ export const deleteUser = async function ({
 			? `${API_BASE_URL}/users/${userId}`
 			: `${API_BASE_URL}/users/admin/${userId}`;
 
-	const response = await fetch(url, {
-		method: 'DELETE',
-		headers: {
-			Authorization: `Bearer ${token}`
+	const timeoutId = setTimeout(() => controller.abort(), timeout);
+	let result = null;
+
+	try {
+		const response = await fetch(url, {
+			signal,
+			method: 'DELETE',
+			headers: {
+				Authorization: `Bearer ${token}`
+			}
+		});
+
+		result = await response.json();
+
+		if (!response.ok) {
+			throw new Error(`${result.message}`);
 		}
-	});
+	} catch (error: any) {
+		let message = 'Something went wrong. Please try again.';
 
-	const result = await response.json();
+		if (error.message) {
+			message = error.message;
+		}
 
-	if (!response.ok) {
-		throw new Error(`${result.message}`);
+		if (error.name === 'AbortError') {
+			message = 'Things are running a bit slow. Please try again';
+		}
+
+		throw new Error(message);
+	} finally {
+		clearTimeout(timeoutId);
 	}
 
-	return response.ok;
+	return result;
 };
 
 export const addUser = async function ({
@@ -139,19 +205,40 @@ export const addUser = async function ({
 }) {
 	const token = await auth.currentUser?.getIdToken();
 	const url = role === 'basic' ? `${API_BASE_URL}/users` : `${API_BASE_URL}/users/admin`;
-	const response = await fetch(url, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({ newItem: { email, password } })
-	});
 
-	const result = await response.json();
+	const timeoutId = setTimeout(() => controller.abort(), timeout);
+	let result = null;
 
-	if (!response.ok) {
-		throw new Error(result.message);
+	try {
+		const response = await fetch(url, {
+			signal,
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ newItem: { email, password } })
+		});
+
+		result = await response.json();
+
+		if (!response.ok) {
+			throw new Error(result.message);
+		}
+	} catch (error: any) {
+		let message = 'Something went wrong. Please try again.';
+
+		if (error.message) {
+			message = error.message;
+		}
+
+		if (error.name === 'AbortError') {
+			message = 'Things are running a bit slow. Please try again';
+		}
+
+		throw new Error(message);
+	} finally {
+		clearTimeout(timeoutId);
 	}
 
 	return result;
