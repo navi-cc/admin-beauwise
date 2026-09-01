@@ -10,15 +10,22 @@ import X from '../icons/x';
 import { Skeleton } from '../ui/skeleton';
 
 type TopicImageDropzoneProps = {
+	topicKey: string | number;
 	index: number;
 	previewUrl?: string;
-	onImageDrop: (index: number, file: File) => void;
-	onRemoveImage: (index: number) => void;
+	altTitle: string;
+	isRemoveVisible: boolean;
+	onImageDrop: (index: number, key: string | number, file: File) => void;
+
+	onRemoveImage: (index: number, key: string | number) => void;
 };
 
 export function TopicImageDropzone({
+	topicKey,
 	index,
 	previewUrl,
+	altTitle,
+	isRemoveVisible,
 	onImageDrop,
 	onRemoveImage
 }: TopicImageDropzoneProps) {
@@ -29,7 +36,7 @@ export function TopicImageDropzone({
 		(acceptedFiles: File[]) => {
 			const file = acceptedFiles[0];
 			if (file) {
-				onImageDrop(index, file);
+				onImageDrop(index, topicKey, file);
 			}
 		},
 		[index, onImageDrop]
@@ -83,7 +90,7 @@ export function TopicImageDropzone({
 									setLoading(false);
 								}}
 								src={previewUrl}
-								alt={`Topic ${index + 1}`}
+								alt={altTitle}
 								className={cn(
 									'w-full h-full object-cover transition-opacity duration-200',
 									loading ? 'opacity-0' : 'opacity-100'
@@ -107,18 +114,20 @@ export function TopicImageDropzone({
 				</span>
 				{!error && previewUrl && (
 					<div className='flex gap-1'>
-						<Button
-							type='button'
-							variant='ghost'
-							size='sm'
-							onClick={(e) => {
-								e.stopPropagation();
-								onRemoveImage(index);
-							}}
-							className='text-destructive hover:text-destructive w-fit p-1 h-auto'
-						>
-							<X className='size-4' />
-						</Button>
+						{/* {isRemoveVisible && (
+							<Button
+								type='button'
+								variant='ghost'
+								size='sm'
+								onClick={(e) => {
+									e.stopPropagation();
+									onRemoveImage(index, topicKey);
+								}}
+								className='text-destructive hover:text-destructive w-fit p-1 h-auto'
+							>
+								<X className='size-4' />
+							</Button>
+						)} */}
 
 						<PhotoView src={previewUrl}>
 							<Button

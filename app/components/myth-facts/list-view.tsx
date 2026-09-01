@@ -15,6 +15,7 @@ import RestoreBin from '../icons/restore-bin';
 export function ListView({
 	mythFacts,
 	isFetching,
+	isUpdating,
 	query,
 	handleEdit,
 	handleDeleteClick,
@@ -22,11 +23,13 @@ export function ListView({
 	handleNextPage,
 	handlePrevPage,
 	page,
+	pageSize,
 	totalPages,
 	hasMore
 }: {
 	mythFacts: MythFact[];
 	isFetching: boolean;
+	isUpdating: boolean;
 	query: string;
 	handleEdit: (guide: MythFact) => void;
 	handleRestoreClick: (guide: MythFact) => void;
@@ -34,13 +37,14 @@ export function ListView({
 	handleNextPage: () => void;
 	handlePrevPage: () => void;
 	page: number;
+	pageSize: number;
 	totalPages: number;
 	hasMore: boolean;
 }) {
 	return (
 		<div className='flex flex-col gap-3'>
-			{isFetching ? (
-				Array.from({ length: 10 }).map((_, i) => (
+			{isFetching || isUpdating ? (
+				Array.from({ length: pageSize }).map((_, i) => (
 					<div
 						key={`skeleton-${i}`}
 						className='flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card animate-pulse'

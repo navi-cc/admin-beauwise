@@ -41,6 +41,8 @@ import {
 } from '@vidstack/react/player/layouts/default';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
+import CheckMarkBadge from '../icons/checkmark-badge';
+import BadgeAlert from '../icons/badge-alert';
 
 interface GuideFormDialogProps {
 	open: boolean;
@@ -59,7 +61,7 @@ const defaultValues: MythFactFormValues = {
 		fileHash: ''
 	},
 	sources: [{ name: '', link: '' }],
-	topics: [{ topic: '', fact: '', myth: '', fileHash: '' }]
+	topics: [{ topic: '', fact: '', myth: '', fileHash: '', imageId: null, file: null }]
 };
 
 type FileExtended = File & {
@@ -145,9 +147,9 @@ export function MythFactFormDialog({
 		}
 	});
 
-	const [topicImagePreviews, setTopicImagePreviews] = useState<Map<number, string>>(
-		new Map()
-	);
+	const [topicImagePreviews, setTopicImagePreviews] = useState<
+		Map<string | number, string>
+	>(new Map());
 
 	const {
 		fields: sourceFields,
@@ -225,53 +227,68 @@ export function MythFactFormDialog({
 		return stringHash;
 	};
 
-	const handleTopicImageFile = useCallback((index: number, file: FileExtended) => {
-		if (!file.type.startsWith('image/')) {
-			toast.error('Please select an image file');
-			return;
-		}
-		if (file.size > 5 * 1024 * 1024) {
-			toast.error('Image must be less than 5MB');
-			return;
-		}
-
-		const fileHash = generateHash(
-			file.name + file.lastModified.toString() + Date.now().toString()
-		);
-
-		form.setValue(`topics.${index}.fileHash`, fileHash, {
-			shouldDirty: true
-		});
-
-		form.setValue(`topics.${index}.file`, file, {
-			shouldDirty: true,
-			shouldValidate: true
-		});
-
-		setTopicImagePreviews((prev) => new Map(prev).set(index, URL.createObjectURL(file)));
-	}, []);
-
-	const handleRemoveTopicImage = useCallback(
-		(index: number) => {
-			const previewUrl = topicImagePreviews.get(index);
-
-			if (isEditing) {
-				const previousFileHash = mythFact?.topics[index].fileHash as string;
-				form.setValue(`topics.${index}.fileHash`, previousFileHash, {
-					shouldDirty: true
-				});
+	const handleTopicImageFile = useCallback(
+		(index: number, key: number | string, file: File) => {
+			if (!file.type.startsWith('image/')) {
+				toast.error('Please select an image file');
+				return;
+			}
+			if (file.size > 5 * 1024 * 1024) {
+				toast.error('Image must be less than 5MB');
+				return;
 			}
 
-			URL.revokeObjectURL(previewUrl as string);
+			const fileHash = generateHash(
+				file.name + file.lastModified.toString() + Date.now().toString()
+			);
 
-			form.setValue(`topics.${index}.file`, null, {
+			form.setValue(`topics.${index}.fileHash`, fileHash, {
+				shouldDirty: true
+			});
+
+			form.setValue(`topics.${index}.file`, file, {
 				shouldDirty: true,
 				shouldValidate: true
 			});
 
+			console.log('after add 1 topic, values', form.getValues('topics'));
 			setTopicImagePreviews((prev) => {
 				const next = new Map(prev);
-				next.delete(index);
+
+				next.set(key, URL.createObjectURL(file));
+
+				return next;
+			});
+		},
+		[]
+	);
+
+	const handleRemoveTopicImage = useCallback(
+		(index: number, deletedKey: string | number) => {
+			const previewUrl = topicImagePreviews.get(index);
+
+			if (previewUrl?.startsWith('blob')) {
+				URL.revokeObjectURL(previewUrl as string);
+			}
+
+			setTopicImagePreviews((prev) => {
+				const next = new Map();
+
+				prev.forEach((value, key) => {
+					if (key === deletedKey) {
+						return;
+					}
+
+					if (
+						typeof key === 'number' &&
+						typeof deletedKey === 'number' &&
+						deletedKey <= key
+					) {
+						next.set(key - 1, value);
+					} else {
+						next.set(key, value);
+					}
+				});
 
 				return next;
 			});
@@ -279,9 +296,15 @@ export function MythFactFormDialog({
 		[isEditing]
 	);
 
-	const handleRemoveTopic = (index: number) => {
+	const handleRemoveTopic = (index: number, key: string | number) => {
+		console.log('topic values', form.getValues('topics'));
+
+		console.log('index', index);
+
 		removeTopic(index);
-		handleRemoveTopicImage(index);
+
+		console.log('after remove 1 topic, values', form.getValues('topics'));
+		handleRemoveTopicImage(index, key);
 	};
 
 	const updateButtonDisabled = isEditing && _.isEqual(form.getValues(), mythFact);
@@ -295,12 +318,40 @@ export function MythFactFormDialog({
 				},
 				{
 					onSuccess: () => {
-						toast.success(`${mythFact.name} updated successfully.`, {
+						toast.success('Item Updated', {
 							position: 'top-right',
-							duration: 10000
+							description: `${mythFact.name} updated successfully`,
+							descriptionClassName: 'text-red',
+							duration: 12000,
+							icon: <CheckMarkBadge className='text-green-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
 						});
 					},
-					onError: (err) => toast.error(err.message)
+					onError: (err) => {
+						let message = 'Something went wrong. Please try again';
+
+						if (err?.message) {
+							message = err.message;
+						}
+
+						toast.error('Item Not Updated', {
+							description: message,
+							position: 'top-right',
+							duration: 12000,
+							icon: <BadgeAlert className='text-red-500 size-5' />,
+							cancel: {
+								label: (
+									<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+								),
+								onClick: () => {}
+							}
+						});
+					}
 				}
 			);
 		} else {
@@ -331,12 +382,41 @@ export function MythFactFormDialog({
 							setTopicImagePreviews(new Map());
 							setDisplayImagePreview(null);
 							setVideoGuidePreview(null);
-							toast.success(`${data.name} added successfully`, {
+
+							toast.success('Item Added', {
 								position: 'top-right',
-								duration: 10000
+								description: `${data.name} is added successfully`,
+								descriptionClassName: 'text-red',
+								duration: 12000,
+								icon: <CheckMarkBadge className='text-green-500 size-5' />,
+								cancel: {
+									label: (
+										<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+									),
+									onClick: () => {}
+								}
 							});
 						},
-						onError: (err) => toast.error(err.message)
+						onError: (err) => {
+							let message = 'Something went wrong. Please try again';
+
+							if (err?.message) {
+								message = err.message;
+							}
+
+							toast.error('Item Not Added', {
+								description: message,
+								position: 'top-right',
+								duration: 12000,
+								icon: <BadgeAlert className='text-red-500 size-5' />,
+								cancel: {
+									label: (
+										<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+									),
+									onClick: () => {}
+								}
+							});
+						}
 					}
 				);
 			} else {
@@ -368,7 +448,8 @@ export function MythFactFormDialog({
 						fact: t.fact,
 						myth: t.myth,
 						imageId: t.imageId,
-						fileHash: t?.fileHash
+						fileHash: t?.fileHash,
+						file: null
 					}))
 				});
 				setDisplayImagePreview(
@@ -380,11 +461,17 @@ export function MythFactFormDialog({
 						null
 				);
 				mythFact.topics.forEach((t, i) => {
-					if (t.fileHash)
+					if (t.fileHash) {
 						topicImagePreviews.set(
-							i,
+							t.imageId as string,
 							`https://${import.meta.env.VITE_CDN_BEAUWISE}/learn/${mythFact?.baseImagePath}/${t.imageId}.webp?q=${t.fileHash}`
 						);
+					}
+				});
+
+				setTopicImagePreviews((prev) => {
+					const next = new Map(prev);
+					return next;
 				});
 			} else {
 				form.reset(defaultValues);
@@ -428,11 +515,11 @@ export function MythFactFormDialog({
 												Name <span className='text-destructive'>*</span>
 											</FieldLabel>
 											<Input placeholder='e.g., Skincare MythFact' {...field} />
-											{!isEditing && field.value && (
+											{/* {!isEditing && field.value && (
 												<p className='text-xs text-muted-foreground'>
 													ID: <code>{generateId(field.value)}</code>
 												</p>
-											)}
+											)} */}
 
 											<FieldError errors={[error]} />
 										</Field>
@@ -505,18 +592,20 @@ export function MythFactFormDialog({
 
 										{!displayImageLoadError && displayImagePreview && (
 											<div className='flex flex-col gap-1'>
-												<Button
-													type='button'
-													variant='ghost'
-													size='icon'
-													onClick={(e) => {
-														e.stopPropagation();
-														handleRemoveImage(e);
-													}}
-													className='h-7 w-7 text-destructive hover:text-destructive'
-												>
-													<X className='h-4 w-4' />
-												</Button>
+												{!isEditing && (
+													<Button
+														type='button'
+														variant='ghost'
+														size='icon'
+														onClick={(e) => {
+															e.stopPropagation();
+															handleRemoveImage(e);
+														}}
+														className='h-7 w-7 text-destructive hover:text-destructive'
+													>
+														<X className='h-4 w-4' />
+													</Button>
+												)}
 
 												<PhotoView src={displayImagePreview}>
 													<Button
@@ -597,18 +686,20 @@ export function MythFactFormDialog({
 
 										{!videoGuideLoadError && videoGuidePreview && (
 											<div className='flex flex-col gap-1'>
-												<Button
-													type='button'
-													variant='ghost'
-													size='icon'
-													onClick={(e) => {
-														e.stopPropagation();
-														handleRemoveVideo(e);
-													}}
-													className='h-7 w-7 text-destructive hover:text-destructive'
-												>
-													<X className='h-4 w-4' />
-												</Button>
+												{!isEditing && (
+													<Button
+														type='button'
+														variant='ghost'
+														size='icon'
+														onClick={(e) => {
+															e.stopPropagation();
+															handleRemoveVideo(e);
+														}}
+														className='h-7 w-7 text-destructive hover:text-destructive'
+													>
+														<X className='h-4 w-4' />
+													</Button>
+												)}
 
 												<Button
 													type='button'
@@ -711,9 +802,9 @@ export function MythFactFormDialog({
 										type='button'
 										variant='outline'
 										size='sm'
-										onClick={() =>
-											appendTopic({ topic: '', fact: '', myth: '', fileHash: '' })
-										}
+										onClick={() => {
+											appendTopic({ topic: '', fact: '', myth: '', fileHash: '' });
+										}}
 										className='h-7 gap-1 text-xs'
 									>
 										<Plus className='h-3 w-3' />
@@ -742,7 +833,12 @@ export function MythFactFormDialog({
 														type='button'
 														variant='ghost'
 														size='icon'
-														onClick={() => handleRemoveTopic(index)}
+														onClick={() =>
+															handleRemoveTopic(
+																index,
+																field.imageId ? field.imageId : index
+															)
+														}
 														className='h-6 w-6 text-destructive hover:text-destructive'
 													>
 														<Trash className='h-3.5 w-3.5' />
@@ -760,11 +856,7 @@ export function MythFactFormDialog({
 															{...f}
 															className='h-8 text-sm'
 														/>
-														{/* {f.value && (
-															<p className='text-[10px] text-muted-foreground'>
-																ID: {generateId(f.value)}
-															</p>
-														)} */}
+
 														<FieldError errors={[error]} />
 													</Field>
 												)}
@@ -806,13 +898,17 @@ export function MythFactFormDialog({
 												control={form.control}
 												name={`topics.${index}.file`}
 												render={({ fieldState: { error } }) => {
-													const url = topicImagePreviews.get(index);
+													const key = field.imageId ? field.imageId : index;
+													const url = topicImagePreviews.get(key);
 
 													return (
 														<Field>
 															<TopicImageDropzone
+																topicKey={key}
 																index={index}
+																isRemoveVisible={!isEditing}
 																previewUrl={url}
+																altTitle={field.topic ? field.topic : `topic-${index}`}
 																onImageDrop={handleTopicImageFile}
 																onRemoveImage={handleRemoveTopicImage}
 															/>

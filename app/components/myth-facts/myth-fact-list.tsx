@@ -61,6 +61,10 @@ import {
 import ChevronDown from '../icons/chevron-down';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import Refresh from '../icons/refresh';
+import CheckMarkBadge from '../icons/checkmark-badge';
+import X from '../icons/x';
+import BadgeAlert from '../icons/badge-alert';
+import { useMythFactStore } from '@/store/useMythFactStore';
 
 type FilterItem = {
 	name: string;
@@ -89,6 +93,9 @@ export function MythFactList() {
 
 	const [restoringMythFact, setRestoringMythFact] = useState<MythFact | null>(null);
 	const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+
+	const isAddingItem = useMythFactStore((state) => state.isAdding);
+	const isUpdatingItem = useMythFactStore((state) => state.isUpdating);
 
 	const {
 		items,
@@ -133,26 +140,65 @@ export function MythFactList() {
 
 	const handleRestoreConfirm = async () => {
 		if (!restoringMythFact) return;
+		setRestoreDialogOpen(false);
 		try {
 			await restoreMutation.mutateAsync(restoringMythFact.id as string);
-			toast.success(`"${restoringMythFact.name}" has been restored.`);
+			toast.success('Item Restored', {
+				position: 'top-right',
+				description: `"${restoringMythFact.name}" has been restored.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} catch (error: any) {
-			toast.error(error?.message ?? 'Failed to restore item');
+			toast.error('Item Restore Failed', {
+				description: `"${restoringMythFact.name}" is not restored. Please try again.`,
+				position: 'top-right',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} finally {
-			setRestoreDialogOpen(false);
 			setRestoringMythFact(null);
 		}
 	};
 
 	const handleDeleteConfirm = async () => {
 		if (!mythFact) return;
+		setDeleteDialogOpen(false);
 		try {
 			await deleteMutation.mutateAsync(mythFact.id as string);
-			toast.success(`"${mythFact.name}" has been deleted.`);
+			toast.success('Item Deleted', {
+				position: 'top-right',
+				description: `"${mythFact.name}" has been deleted.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <CheckMarkBadge className='text-green-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} catch (error: any) {
-			toast.error(error?.message ?? `Failed to delete ${mythFact.name}`);
+			toast.error('Item Delete Failed', {
+				position: 'top-right',
+				description: `"${mythFact.name}" is not deleted. Please try again.`,
+				descriptionClassName: 'text-red',
+				duration: 12000,
+				icon: <BadgeAlert className='text-red-500 size-5' />,
+				cancel: {
+					label: <X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />,
+					onClick: () => {}
+				}
+			});
 		} finally {
-			setDeleteDialogOpen(false);
 			setDeletingMythFact(null);
 		}
 	};
@@ -166,6 +212,11 @@ export function MythFactList() {
 		delayQuery(e.target.value);
 	};
 
+	const isUpdating =
+		deleteMutation.isPending ||
+		restoreMutation.isPending ||
+		isAddingItem ||
+		isUpdatingItem;
 	return (
 		<div className='space-y-1.5'>
 			<div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
@@ -216,7 +267,7 @@ export function MythFactList() {
 									<DropdownMenuCheckboxItem
 										checked={isCheck}
 										key={key}
-										disabled={isFetching}
+										disabled={isFetching || isUpdating}
 										className='transition-colors duration-300'
 										onCheckedChange={(checked) => {
 											const newItems = filters
@@ -253,6 +304,7 @@ export function MythFactList() {
 							{[10, 20, 30].map((size) => {
 								return (
 									<Button
+										disabled={isFetching || isUpdating}
 										onClick={() => setPageSize(size)}
 										variant='ghost'
 										className={`font-light transition-colors duration-300 ${size === pageSize ? 'bg-muted' : 'bg-transparent'}`}
@@ -309,7 +361,9 @@ export function MythFactList() {
 							totalCount,
 							totalPages,
 							page,
+							pageSize,
 							isFetching,
+							isUpdating,
 							hasMore,
 							isError,
 							retry
@@ -324,11 +378,13 @@ export function MythFactList() {
 							handleRestoreClick,
 							query,
 							isFetching,
+							isUpdating,
 							handleEdit,
 							handleDeleteClick,
 							handleNextPage,
 							handlePrevPage,
 							page,
+							pageSize,
 							totalPages,
 							hasMore
 						}}
@@ -338,6 +394,7 @@ export function MythFactList() {
 				<TabsContent value='grid-view'>
 					<GridView
 						{...{
+							isUpdating,
 							items,
 							query,
 							handleRestoreClick,
@@ -345,6 +402,7 @@ export function MythFactList() {
 							handleDeleteClick,
 							isFetching,
 							page,
+							pageSize,
 							totalPages,
 							handlePrevPage,
 							handleNextPage,
@@ -373,7 +431,7 @@ export function MythFactList() {
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteConfirm}
-							className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+							className='bg-destructive hover:bg-destructive/90'
 						>
 							{deleteMutation.isPending && (
 								<Loader className='mr-2 h-4 w-4 animate-spin' />
