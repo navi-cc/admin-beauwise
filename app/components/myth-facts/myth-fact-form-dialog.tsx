@@ -280,9 +280,10 @@ export function MythFactFormDialog({
 					}
 
 					if (
-						typeof key === 'number' &&
-						typeof deletedKey === 'number' &&
-						deletedKey <= key
+						(typeof key === 'number' &&
+							typeof deletedKey === 'number' &&
+							deletedKey <= key) ||
+						(typeof deletedKey === 'string' && typeof key === 'number')
 					) {
 						next.set(key - 1, value);
 					} else {
@@ -926,7 +927,14 @@ export function MythFactFormDialog({
 						</div>
 
 						<AlertDialogFooter>
-							<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+							<AlertDialogCancel
+								onClick={() => {
+									setTopicImagePreviews(new Map());
+								}}
+								disabled={isPending}
+							>
+								Cancel
+							</AlertDialogCancel>
 							<Button type='submit' disabled={isPending || !form.formState.isDirty}>
 								{isPending && <Loader className='mr-2 h-4 w-4 animate-spin' />}
 								{isEditing ? 'Update' : 'Add'} Item
