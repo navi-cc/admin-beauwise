@@ -92,9 +92,8 @@ connectStorageEmulator #...
 npm install
 ```
 
-2. Build and Start the App (Android)
-   This single command will automatically generate the native android folder, build the project, and start the Expo development server:
+2. Build and Start the App
 
 ```bash
-npm run android
+npm run dev
 ```
