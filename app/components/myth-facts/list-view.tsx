@@ -93,8 +93,10 @@ export function ListView({
 							<div className='flex items-center gap-3 mt-1.5'>
 								<Badge className='text-xs gap-1'>
 									<BookOpen className='h-3 w-3' />
-									{guide?.topics?.length ?? 0} topic
-									{(guide?.topics?.length ?? 0) !== 1 ? 's' : ''}
+									{guide?.topics?.filter((item) => !item?.is_deleted)?.length ?? 0} topic
+									{(guide?.topics?.filter((item) => !item?.is_deleted)?.length ?? 0) !== 1
+										? 's'
+										: ''}
 								</Badge>
 
 								{guide?.sources?.length > 0 && (

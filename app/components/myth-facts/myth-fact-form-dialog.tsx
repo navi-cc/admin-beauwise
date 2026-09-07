@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useForm, FormProvider, useFieldArray, Controller } from 'react-hook-form';
+import {
+	useForm,
+	FormProvider,
+	useFieldArray,
+	Controller,
+	type UseFormReturn
+} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
 	AlertDialog,
@@ -8,8 +14,11 @@ import {
 	AlertDialogTitle,
 	AlertDialogDescription,
 	AlertDialogFooter,
-	AlertDialogCancel
+	AlertDialogCancel,
+	AlertDialogAction
 } from '@/components/ui/alert-dialog';
+
+import { format, fromUnixTime } from 'date-fns';
 
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,6 +52,7 @@ import { Skeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
 import CheckMarkBadge from '../icons/checkmark-badge';
 import BadgeAlert from '../icons/badge-alert';
+import RestoreBin from '../icons/restore-bin';
 
 interface GuideFormDialogProps {
 	open: boolean;
@@ -61,7 +71,18 @@ const defaultValues: MythFactFormValues = {
 		fileHash: ''
 	},
 	sources: [{ name: '', link: '' }],
-	topics: [{ topic: '', fact: '', myth: '', fileHash: '', imageId: null, file: null }]
+	topics: [
+		{
+			topic: '',
+			fact: '',
+			myth: '',
+			fileHash: '',
+			imageId: null,
+			file: null,
+			is_deleted: undefined,
+			scheduledDeleteAt: undefined
+		}
+	]
 };
 
 type FileExtended = File & {
@@ -76,6 +97,8 @@ export function MythFactFormDialog({
 }: GuideFormDialogProps) {
 	const addMutation = useAddMythFact();
 	const updateMutation = useUpdateMythFact();
+
+	const [modalConfirmation, setModalConfirmation] = useState(false);
 
 	const [displayImageLoading, setDisplayImageLoading] = useState(true);
 	const [videoGuideLoading, setVideoGuideLoading] = useState(true);
@@ -163,7 +186,8 @@ export function MythFactFormDialog({
 	const {
 		fields: topicFields,
 		append: appendTopic,
-		remove: removeTopic
+		remove: removeTopic,
+		update: updateTopic
 	} = useFieldArray({
 		control: form.control,
 		name: 'topics'
@@ -297,14 +321,28 @@ export function MythFactFormDialog({
 		[isEditing]
 	);
 
-	const handleRemoveTopic = (index: number, key: string | number) => {
-		console.log('topic values', form.getValues('topics'));
+	const handleRestore = (index: number) => {
+		const data = form.getValues(`topics.${index}`);
 
-		console.log('index', index);
+		updateTopic(index, {
+			...data,
+			is_deleted: false
+		});
+	};
+
+	const handleRemoveTopic = (index: number, key: string | number) => {
+		if (isEditing && typeof key === 'string') {
+			const data = form.getValues(`topics.${index}`);
+
+			updateTopic(index, {
+				...data,
+				is_deleted: true
+			});
+			return;
+		}
 
 		removeTopic(index);
 
-		console.log('after remove 1 topic, values', form.getValues('topics'));
 		handleRemoveTopicImage(index, key);
 	};
 
@@ -312,6 +350,15 @@ export function MythFactFormDialog({
 
 	const onSubmit = async (data: MythFactFormValues) => {
 		if (isEditing && mythFact) {
+			if (
+				isTopicImagesModified(data, mythFact, form) ||
+				form.getFieldState('displayImage.file').isDirty ||
+				form.getFieldState('videoGuide.file').isDirty
+			) {
+				setModalConfirmation(true);
+				return;
+			}
+
 			onOpenChange(false);
 			updateMutation.mutate(
 				{
@@ -426,7 +473,78 @@ export function MythFactFormDialog({
 		}
 	};
 
+	const handleConfirmForMedia = () => {
+		const data = form.getValues();
+
+		onOpenChange(false);
+		setModalConfirmation(false);
+		updateMutation.mutate(
+			{
+				data
+			},
+			{
+				onSuccess: () => {
+					toast.success('Item Updated', {
+						position: 'top-right',
+						description: `${mythFact.name} updated successfully`,
+						descriptionClassName: 'text-red',
+						duration: 12000,
+						icon: <CheckMarkBadge className='text-green-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
+					});
+				},
+				onError: (err) => {
+					let message = 'Something went wrong. Please try again';
+
+					if (err?.message) {
+						message = err.message;
+					}
+
+					toast.error('Item Not Updated', {
+						description: message,
+						position: 'top-right',
+						duration: 12000,
+						icon: <BadgeAlert className='text-red-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
+					});
+				}
+			}
+		);
+	};
+
 	const isPending = addMutation.isPending || updateMutation.isPending;
+
+	const getNumberOfTopicDeleted = (): number => {
+		const data = form.getValues();
+
+		const deletedTopics = data.topics.filter((item) => item?.is_deleted);
+
+		return deletedTopics.length;
+	};
+
+	const getNumberOfTopicImageUpdated = (): number => {
+		let numberOfTopicImageUpdated = 0;
+		if (mythFact && modalConfirmation) {
+			numberOfTopicImageUpdated = Array.from({
+				length: form.getValues('topics').length
+			}).filter((_, index) => {
+				const isDirty = form.getFieldState(`topics.${index}.file`).isDirty;
+				return isDirty;
+			}).length;
+		}
+
+		return numberOfTopicImageUpdated;
+	};
 
 	useEffect(() => {
 		if (open) {
@@ -450,7 +568,9 @@ export function MythFactFormDialog({
 						myth: t.myth,
 						imageId: t.imageId,
 						fileHash: t?.fileHash,
-						file: null
+						file: null,
+						is_deleted: !!t?.is_deleted,
+						scheduledDeleteAt: t?.scheduledDeleteAt ? t.scheduledDeleteAt : undefined
 					}))
 				});
 				setDisplayImagePreview(
@@ -593,7 +713,7 @@ export function MythFactFormDialog({
 
 										{!displayImageLoadError && displayImagePreview && (
 											<div className='flex flex-col gap-1'>
-												{!isEditing && (
+												{/* {!isEditing && (
 													<Button
 														type='button'
 														variant='ghost'
@@ -606,7 +726,7 @@ export function MythFactFormDialog({
 													>
 														<X className='h-4 w-4' />
 													</Button>
-												)}
+												)} */}
 
 												<PhotoView src={displayImagePreview}>
 													<Button
@@ -687,7 +807,7 @@ export function MythFactFormDialog({
 
 										{!videoGuideLoadError && videoGuidePreview && (
 											<div className='flex flex-col gap-1'>
-												{!isEditing && (
+												{/* {!isEditing && (
 													<Button
 														type='button'
 														variant='ghost'
@@ -700,7 +820,7 @@ export function MythFactFormDialog({
 													>
 														<X className='h-4 w-4' />
 													</Button>
-												)}
+												)} */}
 
 												<Button
 													type='button'
@@ -825,11 +945,36 @@ export function MythFactFormDialog({
 											key={field.id}
 											className='rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2.5'
 										>
+											{field?.is_deleted && field?.scheduledDeleteAt && (
+												<span className='text-xs font-medium text-destructive/70'>
+													This item will remain until{' '}
+													{format(
+														fromUnixTime(field.scheduledDeleteAt._seconds as number),
+														'MMMM d, yyyy'
+													)}
+												</span>
+											)}
+
 											<div className='flex items-center justify-between'>
 												<span className='text-xs font-medium text-muted-foreground'>
 													Topic {index + 1}
 												</span>
-												{topicFields.length > 1 && (
+
+												{field.is_deleted && (
+													<Button
+														type='button'
+														variant='ghost'
+														size='icon'
+														onClick={() => {
+															handleRestore(index);
+														}}
+														className='h-6 w-6'
+													>
+														<RestoreBin className='size-3.5' />
+													</Button>
+												)}
+
+												{!field?.is_deleted && (
 													<Button
 														type='button'
 														variant='ghost'
@@ -853,6 +998,7 @@ export function MythFactFormDialog({
 												render={({ field: f, fieldState: { error } }) => (
 													<Field>
 														<Input
+															disabled={field?.is_deleted}
 															placeholder='Topic name *'
 															{...f}
 															className='h-8 text-sm'
@@ -869,6 +1015,7 @@ export function MythFactFormDialog({
 												render={({ field: f, fieldState: { error } }) => (
 													<Field>
 														<Textarea
+															disabled={field?.is_deleted}
 															placeholder='Fact *'
 															rows={2}
 															{...f}
@@ -885,6 +1032,7 @@ export function MythFactFormDialog({
 												render={({ field: f, fieldState: { error } }) => (
 													<Field>
 														<Textarea
+															disabled={field?.is_deleted}
 															placeholder='Myth *'
 															rows={2}
 															{...f}
@@ -905,6 +1053,7 @@ export function MythFactFormDialog({
 													return (
 														<Field>
 															<TopicImageDropzone
+																disabled={field?.is_deleted as boolean}
 																topicKey={key}
 																index={index}
 																isRemoveVisible={!isEditing}
@@ -968,6 +1117,70 @@ export function MythFactFormDialog({
 					<AlertDialogCancel variant='default'>Close</AlertDialogCancel>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<AlertDialog
+				open={modalConfirmation}
+				onOpenChange={(open, e) => {
+					setModalConfirmation(open);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Confirm Media Changes</AlertDialogTitle>
+						<AlertDialogDescription>
+							This action will permanently update or remove the selected files. This
+							cannot be undone.
+							<p className='font-semibold mt-4'>Affected Files</p>
+							<ul className='list-disc'>
+								{form.getFieldState('displayImage.file').isDirty && (
+									<li className='ml-3'>Display Image (updated)</li>
+								)}
+
+								{form.getFieldState('videoGuide.file').isDirty && (
+									<li className='ml-3'>Video Guide (updated)</li>
+								)}
+
+								{mythFact && isTopicImagesModified(form.getValues(), mythFact, form) && (
+									<li className='ml-3'>
+										Topic Images{' '}
+										{getNumberOfTopicDeleted() > 0 &&
+											`(${getNumberOfTopicDeleted()}) to be deleted`}
+									</li>
+								)}
+							</ul>
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={handleConfirmForMedia}>
+							Confirm Changes
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</>
 	);
+}
+
+function isTopicImagesModified(
+	data: MythFactFormValues,
+	mythFact: MythFact,
+	form: UseFormReturn<MythFactFormValues>
+): boolean {
+	const deletedTopics = data.topics.filter((item) => item?.is_deleted);
+
+	const oldImageIds = new Set(mythFact.topics.map((topic) => topic.imageId));
+
+	const isOldTopicItemsModified = Array.from({
+		length: form.getValues('topics').length
+	}).some((_, index) => {
+		const imageId = form.getValues(`topics.${index}.imageId`);
+		const isDirty = form.getFieldState(`topics.${index}.file`).isDirty;
+		return (
+			isDirty && mythFact.topics.length <= data.topics.length && oldImageIds.has(imageId)
+		);
+	});
+
+	return deletedTopics.length > 0 || isOldTopicItemsModified;
 }

@@ -15,6 +15,7 @@ type TopicImageDropzoneProps = {
 	previewUrl?: string;
 	altTitle: string;
 	isRemoveVisible: boolean;
+	disabled: boolean;
 	onImageDrop: (index: number, key: string | number, file: File) => void;
 
 	onRemoveImage: (index: number, key: string | number) => void;
@@ -25,6 +26,7 @@ export function TopicImageDropzone({
 	index,
 	previewUrl,
 	altTitle,
+	disabled,
 	isRemoveVisible,
 	onImageDrop,
 	onRemoveImage
@@ -69,7 +71,7 @@ export function TopicImageDropzone({
 					isDragActive && 'border-primary bg-primary/10'
 				)}
 			>
-				<input {...getInputProps()} />
+				<input {...getInputProps()} disabled={disabled} />
 
 				{previewUrl ? (
 					<>

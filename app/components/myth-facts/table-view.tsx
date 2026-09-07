@@ -158,16 +158,20 @@ export function TableView({
 									<TableCell className='font-medium'>{mythFact.name}</TableCell>
 									<TableCell>
 										<div className='flex flex-wrap gap-1'>
-											{mythFact.topics.slice(0, 3).map((item) => (
-												<Badge
-													key={item.id}
-													variant='secondary'
-													className='text-xs font-light'
-												>
-													{item.topic}
-												</Badge>
-											))}
-											{mythFact.topics.length > 3 && (
+											{mythFact.topics
+												.slice(0, 3)
+												.filter((item) => !item?.is_deleted)
+												?.map((item) => (
+													<Badge
+														key={item.topic}
+														variant='secondary'
+														className='text-xs font-light'
+													>
+														{item.topic}
+													</Badge>
+												))}
+											{mythFact.topics.filter((item) => !item?.is_deleted)?.length >
+												3 && (
 												<Badge className='text-xs font-light'>
 													+{mythFact.topics.length - 3}
 												</Badge>
