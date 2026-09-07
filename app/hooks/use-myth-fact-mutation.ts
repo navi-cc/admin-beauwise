@@ -157,7 +157,8 @@ export function useUpdateMythFact() {
 					fact: t.fact,
 					myth: t.myth,
 					imageId: t.imageId,
-					fileHash: t.fileHash
+					fileHash: t.fileHash,
+					is_deleted: !!t?.is_deleted
 				}))
 			};
 
