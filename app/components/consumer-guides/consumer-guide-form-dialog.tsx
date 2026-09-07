@@ -42,6 +42,16 @@ import { Skeleton } from '../ui/skeleton';
 import BadgeAlert from '../icons/badge-alert';
 import X from '../icons/x';
 import CheckMarkBadge from '../icons/checkmark-badge';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle
+} from '../ui/alert-dialog';
 interface ItemFormDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -63,6 +73,8 @@ export function ConsumerGuideFormDialog({
 	item
 }: ItemFormDialogProps) {
 	const isEditing = !!item;
+
+	const [modalConfirmation, setModalConfirmation] = useState(false);
 
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [imageLoading, setImageLoading] = useState(true);
@@ -134,6 +146,11 @@ export function ConsumerGuideFormDialog({
 
 	const onSubmit = async (data: ConsumerGuideFormValues) => {
 		if (isEditing && item) {
+			if (form.getFieldState('file').isDirty) {
+				setModalConfirmation(true);
+				return;
+			}
+
 			onOpenChange(false);
 			updateMutation.mutate(
 				{
@@ -232,6 +249,59 @@ export function ConsumerGuideFormDialog({
 		}
 	};
 
+	const handleConfirmForMedia = () => {
+		const data = form.getValues();
+
+		setModalConfirmation(false);
+		onOpenChange(false);
+		updateMutation.mutate(
+			{
+				data
+			},
+			{
+				onSuccess: (result: any) => {
+					if (result?.code === 'app_error') {
+						throw new Error(result?.message);
+					}
+
+					toast.success('Item Updated', {
+						position: 'top-right',
+						description: `${item?.name} updated successfully`,
+						descriptionClassName: 'text-red',
+						duration: 12000,
+						icon: <CheckMarkBadge className='text-green-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
+					});
+				},
+				onError: (err) => {
+					let message = 'Something went wrong. Please try again';
+
+					if (err?.message) {
+						message = err.message;
+					}
+
+					toast.error('Item Not Updated', {
+						description: message,
+						position: 'top-right',
+						duration: 12000,
+						icon: <BadgeAlert className='text-red-500 size-5' />,
+						cancel: {
+							label: (
+								<X className='size-6 hover:bg-muted/80 duration-300 rounded-full p-1' />
+							),
+							onClick: () => {}
+						}
+					});
+				}
+			}
+		);
+	};
+
 	const isPending = addMutation.isPending || updateMutation.isPending;
 
 	useEffect(() => {
@@ -263,96 +333,106 @@ export function ConsumerGuideFormDialog({
 	}, []);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
-				<DialogHeader>
-					<DialogTitle>{isEditing ? 'Edit Item' : 'Add Item'}</DialogTitle>
-					<DialogDescription>
-						{isEditing
-							? 'Update the item details below.'
-							: 'Fill in the details to add a new item.'}
-					</DialogDescription>
-				</DialogHeader>
+		<>
+			<AlertDialog
+				open={open}
+				onOpenChange={(open, e) => {
+					if (!open && e.reason === 'escape-key') {
+						return;
+					}
 
-				<FormProvider {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
-						<div className='space-y-2'>
-							<FieldLabel>Image</FieldLabel>
-							<FieldError errors={[form.getFieldState('file').error]} />
-							<div className='flex items-center gap-4'>
-								<div
-									{...getRootProps()}
-									className={cn(
-										'relative group w-32 h-32 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/50 shrink-0',
-										isDragAccept || form.getValues('file')
-											? 'border-emerald-500 bg-emerald-500/5'
-											: isDragReject
-												? 'border-destructive bg-destructive/5'
-												: 'border-border'
-									)}
-								>
-									<input {...getInputProps()} />
+					onOpenChange(open);
+				}}
+			>
+				<DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
+					<DialogHeader>
+						<DialogTitle>{isEditing ? 'Edit Item' : 'Add Item'}</DialogTitle>
+						<DialogDescription>
+							{isEditing
+								? 'Update the item details below.'
+								: 'Fill in the details to add a new item.'}
+						</DialogDescription>
+					</DialogHeader>
 
-									{imagePreview ? (
-										<>
-											{imageLoading && !imageLoadError && (
-												<Skeleton className='absolute inset-0 w-full h-full z-10' />
-											)}
-
-											{imageLoadError ? (
-												<div className='flex flex-col items-center justify-center text-xs text-destructive p-2 text-center z-10'>
-													<span>Image failed to load</span>
-												</div>
-											) : (
-												<img
-													key={imagePreview}
-													src={imagePreview}
-													onLoad={() => setImageLoading(false)}
-													onError={() => {
-														setImageLoading(false);
-														setImageLoadError(true);
-													}}
-													alt='Preview'
-													className={cn(
-														'w-full h-full object-cover transition-opacity duration-200',
-														imageLoading ? 'opacity-0' : 'opacity-100'
-													)}
-												/>
-											)}
-
-											{!imageLoading && !imageLoadError && (
-												<div className='absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20'>
-													<ImageUp className='h-5 w-5 text-white' />
-												</div>
-											)}
-										</>
-									) : (
-										<div className='flex flex-col items-center gap-1 text-muted-foreground'>
-											<ImageCompositionOval className='h-8 w-8' />
-											<span className='text-xs'>Upload</span>
-										</div>
-									)}
-								</div>
-
-								{/* Info text & Remove button */}
-								<div className='flex flex-col gap-2 pt-1'>
-									<p className='text-xs text-muted-foreground'>
-										{isDragReject ? (
-											<span className='text-destructive font-medium'>
-												Invalid File Type. Only JPG, PNG, and WEBP are allowed.
-											</span>
-										) : (
-											<>
-												Click to upload or drag & drop.
-												<br />
-												Max 5MB. JPG, PNG, WebP.
-											</>
+					<FormProvider {...form}>
+						<form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
+							<div className='space-y-2'>
+								<FieldLabel>Image</FieldLabel>
+								<FieldError errors={[form.getFieldState('file').error]} />
+								<div className='flex items-center gap-4'>
+									<div
+										{...getRootProps()}
+										className={cn(
+											'relative group w-32 h-32 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/50 shrink-0',
+											isDragAccept || form.getValues('file')
+												? 'border-emerald-500 bg-emerald-500/5'
+												: isDragReject
+													? 'border-destructive bg-destructive/5'
+													: 'border-border'
 										)}
-									</p>
+									>
+										<input {...getInputProps()} />
 
-									{!imageLoadError && imagePreview && (
-										<div className='flex flex-col gap-1'>
-											{/* <Button
+										{imagePreview ? (
+											<>
+												{imageLoading && !imageLoadError && (
+													<Skeleton className='absolute inset-0 w-full h-full z-10' />
+												)}
+
+												{imageLoadError ? (
+													<div className='flex flex-col items-center justify-center text-xs text-destructive p-2 text-center z-10'>
+														<span>Image failed to load</span>
+													</div>
+												) : (
+													<img
+														key={imagePreview}
+														src={imagePreview}
+														onLoad={() => setImageLoading(false)}
+														onError={() => {
+															setImageLoading(false);
+															setImageLoadError(true);
+														}}
+														alt='Preview'
+														className={cn(
+															'w-full h-full object-cover transition-opacity duration-200',
+															imageLoading ? 'opacity-0' : 'opacity-100'
+														)}
+													/>
+												)}
+
+												{!imageLoading && !imageLoadError && (
+													<div className='absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20'>
+														<ImageUp className='h-5 w-5 text-white' />
+													</div>
+												)}
+											</>
+										) : (
+											<div className='flex flex-col items-center gap-1 text-muted-foreground'>
+												<ImageCompositionOval className='h-8 w-8' />
+												<span className='text-xs'>Upload</span>
+											</div>
+										)}
+									</div>
+
+									{/* Info text & Remove button */}
+									<div className='flex flex-col gap-2 pt-1'>
+										<p className='text-xs text-muted-foreground'>
+											{isDragReject ? (
+												<span className='text-destructive font-medium'>
+													Invalid File Type. Only JPG, PNG, and WEBP are allowed.
+												</span>
+											) : (
+												<>
+													Click to upload or drag & drop.
+													<br />
+													Max 5MB. JPG, PNG, WebP.
+												</>
+											)}
+										</p>
+
+										{!imageLoadError && imagePreview && (
+											<div className='flex flex-col gap-1'>
+												{/* <Button
 												type='button'
 												variant='outline'
 												size='sm'
@@ -366,177 +446,206 @@ export function ConsumerGuideFormDialog({
 												Remove
 											</Button> */}
 
-											<PhotoView src={imagePreview}>
-												<Button
-													type='button'
-													variant='ghost'
-													size='icon'
-													onClick={(e) => e.stopPropagation()}
-													className='h-7 w-7 flex items-center justify-center'
-												>
-													<Eye className='h-4 w-4' />
-												</Button>
-											</PhotoView>
-										</div>
-									)}
+												<PhotoView src={imagePreview}>
+													<Button
+														type='button'
+														variant='ghost'
+														size='icon'
+														onClick={(e) => e.stopPropagation()}
+														className='h-7 w-7 flex items-center justify-center'
+													>
+														<Eye className='h-4 w-4' />
+													</Button>
+												</PhotoView>
+											</div>
+										)}
+									</div>
 								</div>
 							</div>
-						</div>
 
-						<Controller
-							control={form.control}
-							name='name'
-							render={({ field, fieldState: { invalid, error } }) => (
-								<Field>
-									<FieldLabel>
-										Name <span className='text-destructive'>*</span>
+							<Controller
+								control={form.control}
+								name='name'
+								render={({ field, fieldState: { invalid, error } }) => (
+									<Field>
+										<FieldLabel>
+											Name <span className='text-destructive'>*</span>
+										</FieldLabel>
+
+										<Input placeholder='e.g., Vitamin C' {...field} />
+
+										{invalid && <FieldError errors={[error]} />}
+									</Field>
+								)}
+							/>
+
+							<Controller
+								control={form.control}
+								name='definition'
+								render={({ field, fieldState: { invalid, error } }) => (
+									<Field>
+										<FieldLabel>
+											Definition <span className='text-destructive'>*</span>
+										</FieldLabel>
+
+										<Textarea
+											placeholder='Describe what this item is...'
+											rows={3}
+											{...field}
+										/>
+
+										{invalid && <FieldError errors={[error]} />}
+									</Field>
+								)}
+							/>
+
+							<Controller
+								control={form.control}
+								name='usage'
+								render={({ field, fieldState: { invalid, error } }) => (
+									<Field>
+										<FieldLabel>
+											Usage <span className='text-destructive'>*</span>
+										</FieldLabel>
+
+										<Input placeholder='Describe what this item is for...' {...field} />
+
+										{invalid && <FieldError errors={[error]} />}
+									</Field>
+								)}
+							/>
+
+							{/* Sources — Dynamic field array */}
+							<div className='space-y-3'>
+								<div className='flex items-center justify-between'>
+									<FieldLabel className='text-sm font-medium'>
+										Sources <span className='text-destructive'>*</span>
 									</FieldLabel>
+									<Button
+										type='button'
+										variant='outline'
+										size='sm'
+										onClick={() => append({ name: '', link: '' })}
+										className='h-7 gap-1 text-xs'
+									>
+										<Plus className='h-3 w-3' />
+										Add Source
+									</Button>
+								</div>
 
-									<Input placeholder='e.g., Vitamin C' {...field} />
+								{fields.length === 0 && (
+									<p className='text-sm text-muted-foreground py-2'>
+										No sources added. Click "Add Source" to add at least one.
+									</p>
+								)}
 
-									{invalid && <FieldError errors={[error]} />}
-								</Field>
-							)}
-						/>
+								{fields.map((field, index) => (
+									<div
+										key={field.id}
+										className='flex items-start gap-2 rounded-lg border border-border/50 bg-muted/30 p-3'
+									>
+										<div className='flex-1 space-y-2'>
+											<Controller
+												control={form.control}
+												name={`sources.${index}.name`}
+												render={({ field, fieldState: { invalid, error } }) => (
+													<Field>
+														<Input
+															placeholder='Source name *'
+															{...field}
+															className='h-8 text-sm'
+														/>
+														{invalid && <FieldError errors={[error]} />}
+													</Field>
+												)}
+											/>
+											<Controller
+												control={form.control}
+												name={`sources.${index}.link`}
+												render={({ field, fieldState: { error, invalid } }) => (
+													<Field>
+														<Input
+															placeholder='https://example.com *'
+															{...field}
+															className='h-8 text-sm'
+														/>
+														{invalid && <FieldError errors={[error]} />}
+													</Field>
+												)}
+											/>
+										</div>
+										{fields.length > 1 && (
+											<Button
+												type='button'
+												variant='ghost'
+												size='icon'
+												onClick={() => remove(index)}
+												className='h-8 w-8 shrink-0 text-destructive hover:text-destructive'
+											>
+												<Trash className='h-4 w-4' />
+											</Button>
+										)}
+									</div>
+								))}
 
-						<Controller
-							control={form.control}
-							name='definition'
-							render={({ field, fieldState: { invalid, error } }) => (
-								<Field>
-									<FieldLabel>
-										Definition <span className='text-destructive'>*</span>
-									</FieldLabel>
+								{form.formState.errors.sources?.root && (
+									<p className='text-sm font-medium text-destructive'>
+										{form.formState.errors.sources.root.message}
+									</p>
+								)}
+								{form.formState.errors.sources?.message && (
+									<p className='text-sm font-medium text-destructive'>
+										{form.formState.errors.sources.message}
+									</p>
+								)}
+							</div>
 
-									<Textarea
-										placeholder='Describe what this item is...'
-										rows={3}
-										{...field}
-									/>
-
-									{invalid && <FieldError errors={[error]} />}
-								</Field>
-							)}
-						/>
-
-						<Controller
-							control={form.control}
-							name='usage'
-							render={({ field, fieldState: { invalid, error } }) => (
-								<Field>
-									<FieldLabel>
-										Usage <span className='text-destructive'>*</span>
-									</FieldLabel>
-
-									<Input placeholder='Describe what this item is for...' {...field} />
-
-									{invalid && <FieldError errors={[error]} />}
-								</Field>
-							)}
-						/>
-
-						{/* Sources — Dynamic field array */}
-						<div className='space-y-3'>
-							<div className='flex items-center justify-between'>
-								<FieldLabel className='text-sm font-medium'>
-									Sources <span className='text-destructive'>*</span>
-								</FieldLabel>
+							<DialogFooter className='pt-4'>
 								<Button
 									type='button'
 									variant='outline'
-									size='sm'
-									onClick={() => append({ name: '', link: '' })}
-									className='h-7 gap-1 text-xs'
+									onClick={() => onOpenChange(false)}
+									disabled={isPending}
 								>
-									<Plus className='h-3 w-3' />
-									Add Source
+									Cancel
 								</Button>
-							</div>
+								<Button type='submit' disabled={isPending || !form.formState.isDirty}>
+									{isPending && <Loader className='mr-2 h-4 w-4 animate-spin' />}
+									{isEditing ? 'Update' : 'Add'} Item
+								</Button>
+							</DialogFooter>
+						</form>
+					</FormProvider>
+				</DialogContent>
+			</AlertDialog>
 
-							{fields.length === 0 && (
-								<p className='text-sm text-muted-foreground py-2'>
-									No sources added. Click "Add Source" to add at least one.
-								</p>
-							)}
+			<AlertDialog
+				open={modalConfirmation}
+				onOpenChange={(open, e) => {
+					setModalConfirmation(open);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Confirm Media Changes</AlertDialogTitle>
+						<AlertDialogDescription>
+							This action will permanently update the selected file. This cannot be
+							undone.
+							<p className='font-semibold mt-4'>Affected Files</p>
+							<ul className='list-disc'>
+								<li className='ml-3'>Display Image (updated)</li>
+							</ul>
+						</AlertDialogDescription>
+					</AlertDialogHeader>
 
-							{fields.map((field, index) => (
-								<div
-									key={field.id}
-									className='flex items-start gap-2 rounded-lg border border-border/50 bg-muted/30 p-3'
-								>
-									<div className='flex-1 space-y-2'>
-										<Controller
-											control={form.control}
-											name={`sources.${index}.name`}
-											render={({ field, fieldState: { invalid, error } }) => (
-												<Field>
-													<Input
-														placeholder='Source name *'
-														{...field}
-														className='h-8 text-sm'
-													/>
-													{invalid && <FieldError errors={[error]} />}
-												</Field>
-											)}
-										/>
-										<Controller
-											control={form.control}
-											name={`sources.${index}.link`}
-											render={({ field, fieldState: { error, invalid } }) => (
-												<Field>
-													<Input
-														placeholder='https://example.com *'
-														{...field}
-														className='h-8 text-sm'
-													/>
-													{invalid && <FieldError errors={[error]} />}
-												</Field>
-											)}
-										/>
-									</div>
-									{fields.length > 1 && (
-										<Button
-											type='button'
-											variant='ghost'
-											size='icon'
-											onClick={() => remove(index)}
-											className='h-8 w-8 shrink-0 text-destructive hover:text-destructive'
-										>
-											<Trash className='h-4 w-4' />
-										</Button>
-									)}
-								</div>
-							))}
-
-							{form.formState.errors.sources?.root && (
-								<p className='text-sm font-medium text-destructive'>
-									{form.formState.errors.sources.root.message}
-								</p>
-							)}
-							{form.formState.errors.sources?.message && (
-								<p className='text-sm font-medium text-destructive'>
-									{form.formState.errors.sources.message}
-								</p>
-							)}
-						</div>
-
-						<DialogFooter className='pt-4'>
-							<Button
-								type='button'
-								variant='outline'
-								onClick={() => onOpenChange(false)}
-								disabled={isPending}
-							>
-								Cancel
-							</Button>
-							<Button type='submit' disabled={isPending || !form.formState.isDirty}>
-								{isPending && <Loader className='mr-2 h-4 w-4 animate-spin' />}
-								{isEditing ? 'Update' : 'Add'} Item
-							</Button>
-						</DialogFooter>
-					</form>
-				</FormProvider>
-			</DialogContent>
-		</Dialog>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={handleConfirmForMedia}>
+							Confirm Changes
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }
