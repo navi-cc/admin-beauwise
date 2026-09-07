@@ -33,6 +33,7 @@ import _ from 'lodash';
 import X from '../icons/x';
 import CheckMarkBadge from '../icons/checkmark-badge';
 import BadgeAlert from '../icons/badge-alert';
+import { AlertDialog } from '../ui/alert-dialog';
 
 interface IngredientFormDialogProps {
 	open: boolean;
@@ -195,7 +196,16 @@ export function IngredientFormDialog({
 	}, [open, ingredient, form]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
+		<AlertDialog
+			open={open}
+			onOpenChange={(open, e) => {
+				if (!open && e.reason === 'escape-key') {
+					return;
+				}
+
+				onOpenChange(open);
+			}}
+		>
 			<DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
 				<DialogHeader>
 					<DialogTitle>{isEditing ? 'Edit Ingredient' : 'Add Ingredient'}</DialogTitle>
@@ -375,6 +385,6 @@ export function IngredientFormDialog({
 					</form>
 				</FormProvider>
 			</DialogContent>
-		</Dialog>
+		</AlertDialog>
 	);
 }
