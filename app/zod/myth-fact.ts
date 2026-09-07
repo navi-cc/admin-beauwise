@@ -33,7 +33,9 @@ export const mythFactTopicSchema = z.object({
 	myth: z.string().min(1, 'Myth is required'),
 	imageId: z.string().nullish(),
 	file: imageSchema,
-	fileHash: z.string()
+	fileHash: z.string(),
+	is_deleted: z.boolean().optional(),
+	scheduledDeleteAt: z.any().optional()
 });
 
 const displayImageSchema = z.object({
