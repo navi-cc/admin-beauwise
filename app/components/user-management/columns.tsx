@@ -26,6 +26,7 @@ import MailAccount02 from '../icons/mail-account-02';
 import UserRoundKey from '../icons/user-round-key';
 import PasswordReset from '../icons/password-reset';
 import UserRemove from '../icons/user-remove';
+import { fromUnixTime, isAfter, isBefore, isEqual, parse } from 'date-fns';
 
 interface ColumnActions {
 	onResetPassword: (user: User) => void;
@@ -154,6 +155,24 @@ export function getUserColumns(
 		{
 			accessorKey: 'metadata.creationTime',
 			id: 'creationTime',
+			sortingFn: (a, b) => {
+				const stringDateFormat = "EEE, dd MMM yyyy HH:mm:ss 'GMT'";
+				const date = new Date();
+
+				const dateA = parse(a.original.metadata.creationTime, stringDateFormat, date);
+
+				const dateB = parse(b.original.metadata.creationTime, stringDateFormat, date);
+
+				if (isAfter(dateA, dateB)) {
+					return 1;
+				}
+
+				if (isEqual(dateB, dateA)) {
+					return 0;
+				}
+
+				return -1;
+			},
 			header: ({ column }) => (
 				<Button
 					variant='ghost'

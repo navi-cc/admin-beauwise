@@ -79,6 +79,14 @@ export function DataTable<TData, TValue>({
 		manualPagination: true,
 		pageCount,
 		onPaginationChange,
+		initialState: {
+			sorting: [
+				{
+					id: 'creationTime',
+					desc: false
+				}
+			]
+		},
 		state: {
 			sorting,
 			columnFilters,
