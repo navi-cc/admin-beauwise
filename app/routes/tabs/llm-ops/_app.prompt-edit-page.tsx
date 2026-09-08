@@ -41,6 +41,8 @@ import { toast } from 'sonner';
 import CheckMarkBadge from '@/components/icons/checkmark-badge';
 import BadgeAlert from '@/components/icons/badge-alert';
 import X from '@/components/icons/x';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import ChevronDown from '@/components/icons/chevron-down';
 
 export default function PromptEditPage() {
 	const { id: promptId } = useParams<{ id: string }>();
@@ -227,21 +229,31 @@ export default function PromptEditPage() {
 							Locked: Active (Production)
 						</Badge>
 					) : (
-						<Select
-							value={formData.status}
-							onValueChange={(val: PromptStatus) =>
-								setFormData({ ...formData, status: val })
-							}
-						>
-							<SelectTrigger className='w-[130px] h-9 text-xs'>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value='draft'>Draft</SelectItem>
-								<SelectItem value='active'>Active</SelectItem>
-								<SelectItem value='archived'>Archived</SelectItem>
-							</SelectContent>
-						</Select>
+						<Popover>
+							<PopoverTrigger
+								render={
+									<Button variant='outline' className='font-light'>
+										<span className='font-normal capitalize'>{formData.status}</span>
+										<ChevronDown />
+									</Button>
+								}
+							/>
+							<PopoverContent align='center' className='w-20'>
+								{['draft', 'active', 'archived'].map((val) => {
+									return (
+										<Button
+											onClick={() => {
+												setFormData({ ...formData, status: val as PromptStatus });
+											}}
+											variant='ghost'
+											className={`capitalize font-light transition-colors duration-300 ${val === formData.status ? 'bg-muted' : 'bg-transparent'}`}
+										>
+											{val}
+										</Button>
+									);
+								})}
+							</PopoverContent>
+						</Popover>
 					)}
 
 					<Button onClick={handleSave} disabled={isSaving}>
